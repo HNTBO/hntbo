@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-background text-text-primary;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    min-height: 100vh;
+    /* Subtle grid pattern - edit /public/images/grid-pattern.svg to customize */
+    background-image: url("/images/grid-pattern.svg");
+    background-position: center;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  a {
+    @apply text-accent hover:text-accent-hover transition-colors;
+  }
+
+  ::selection {
+    @apply bg-accent/30;
+  }
+}
+
+@layer components {
+  .container {
+    @apply max-w-content mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .card {
+    @apply bg-surface rounded-lg border border-border overflow-hidden;
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .card:hover {
+    @apply border-accent/50 shadow-lg shadow-accent/5;
+    transform: translateY(-2px);
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3;
+    @apply font-medium rounded-lg transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-accent text-background hover:bg-accent-hover;
+  }
+
+  .btn-secondary {
+    @apply bg-surface border border-border text-text-primary;
+    @apply hover:border-accent/50;
+  }
+
+  .tag {
+    @apply inline-block px-3 py-1 text-sm rounded-full;
+    @apply bg-surface border border-border text-text-secondary;
+  }
+
+  .video-embed {
+    @apply relative w-full rounded-lg overflow-hidden border border-border;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  }
+
+  .video-embed iframe {
+    @apply absolute top-0 left-0 w-full h-full;
+  }
+
+  /* ==========================================================================
+     PROSE / ARTICLE CONTENT STYLES
+     Site-wide styling for readable long-form content
+     ========================================================================== */
+
+  .prose {
+    @apply text-text-secondary leading-relaxed;
+    font-size: 1.0625rem; /* 17px - slightly larger for readability */
+  }
+
+  /* Headings - with generous spacing */
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    @apply text-text-primary font-semibold;
+  }
+
+  .prose h1 {
+    @apply text-3xl md:text-4xl mt-16 mb-6;
+  }
+
+  .prose h2 {
+    @apply text-2xl md:text-3xl mt-14 mb-5;
+  }
+
+  .prose h3 {
+    @apply text-xl md:text-2xl mt-10 mb-4;
+  }
+
+  .prose h4 {
+    @apply text-lg md:text-xl mt-8 mb-3;
+  }
+
+  /* First heading after title needs less top margin */
+  .prose > h2:first-child,
+  .prose > h3:first-child {
+    @apply mt-0;
+  }
+
+  /* Paragraphs - breathing room */
+  .prose p {
+    @apply mb-6;
+    line-height: 1.8;
+  }
+
+  /* Links */
+  .prose a {
+    @apply text-accent hover:text-accent-hover underline underline-offset-2;
+  }
+
+  /* Strong/Bold */
+  .prose strong {
+    @apply text-text-primary font-semibold;
+  }
+
+  /* Inline code */
+  .prose code {
+    @apply text-accent bg-surface px-2 py-1 rounded text-sm;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /* Code blocks - generous padding */
+  .prose pre {
+    @apply bg-surface border border-border rounded-lg my-8 overflow-x-auto;
+    padding: 1.5rem;
+  }
+
+  .prose pre code {
+    @apply bg-transparent p-0 text-text-secondary;
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  /* Blockquotes */
+  .prose blockquote {
+    @apply border-l-4 border-accent pl-6 py-2 my-8 italic;
+    @apply bg-surface/50 rounded-r-lg pr-6;
+  }
+
+  .prose blockquote p {
+    @apply mb-0 text-text-secondary;
+  }
+
+  /* Lists - with spacing */
+  .prose ul,
+  .prose ol {
+    @apply my-6 pl-6;
+  }
+
+  .prose li {
+    @apply mb-3;
+    line-height: 1.7;
+  }
+
+  .prose ul > li {
+    @apply list-disc;
+  }
+
+  .prose ol > li {
+    @apply list-decimal;
+  }
+
+  .prose ul > li::marker,
+  .prose ol > li::marker {
+    @apply text-accent;
+  }
+
+  /* Nested lists */
+  .prose li > ul,
+  .prose li > ol {
+    @apply mt-3 mb-0;
+  }
+
+  /* Images */
+  .prose img {
+    @apply rounded-lg border border-border my-8;
+  }
+
+  /* Horizontal rules */
+  .prose hr {
+    @apply border-border my-12;
+  }
+
+  /* Tables */
+  .prose table {
+    @apply w-full my-8 text-sm;
+  }
+
+  .prose th {
+    @apply text-left text-text-primary font-semibold p-3 border-b border-border;
+  }
+
+  .prose td {
+    @apply p-3 border-b border-border;
+  }
+
+  /* Video embeds in prose */
+  .prose .video-embed {
+    @apply my-8;
+  }
+}

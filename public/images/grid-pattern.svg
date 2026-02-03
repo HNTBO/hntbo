@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12">
+  <!--
+    Grid Pattern Settings:
+    - width/height: grid cell size (12px)
+    - stroke-opacity: visibility (0.03 = 3%)
+    - stroke-width: line thickness (0.5px)
+
+    To adjust: change width/height AND the path numbers to match
+    Example for 20px grid: width="20" height="20" d="M20 0v20M0 0h20"
+  -->
+  <path
+    d="M12 0v12M0 0h12"
+    stroke="#ffffff"
+    stroke-opacity="0.1"
+    stroke-width="0.5"
+  />
+</svg>
