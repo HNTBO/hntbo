@@ -1,4 +1,6 @@
 ---
+import AnimatedLogo from './AnimatedLogo.astro';
+
 const navLinks = [
   { href: '/', label: 'Home', key: 'home' },
   { href: '/tutos', label: 'Tutos', key: 'tutos' },
@@ -23,7 +25,7 @@ const isActive = (href: string, key: string) => {
 <header class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
   <nav class="container flex items-center justify-between h-16">
     <a href="/" class="text-text-primary hover:text-accent transition-colors font-bold text-xl tracking-tight" aria-label="HNTBO home">
-      HNTBO
+      <AnimatedLogo />
     </a>
 
     <!-- Desktop Navigation -->
@@ -49,7 +51,7 @@ const isActive = (href: string, key: string) => {
             href={externalLink.href}
             target="_blank"
             rel="noopener noreferrer"
-            class="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+            class="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors px-3 py-1.5 border border-border rounded-lg hover:border-text-secondary"
           >
             {externalLink.label}
           </a>

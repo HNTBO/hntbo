@@ -1,6 +1,6 @@
 ---
 title: "Storytrails"
-description: "Visual storyboarding tool for planning video projects with AI-assisted shot descriptions."
+description: "A production tool for AI filmmakers. Track your creative process, not just your outputs."
 githubUrl: "https://github.com/HNTBO/storytrails"
 image: "/images/tools/storytrails.jpg"
 tags: ["Storyboarding", "AI", "Video Production"]
@@ -8,25 +8,28 @@ featured: true
 isLive: false
 ---
 
-## Overview
+## The Problem
 
-A web-based storyboarding application designed for video creators. Combines traditional storyboard workflows with AI assistance for shot descriptions and visual planning.
+AI video generation tools are shot-focused, not film-focused. You generate images and clips, but there's no continuity, no narrative structure, no production pipeline. Creative decisions get lost across browser tabs, chat windows, and downloads folders.
+
+## The Solution
+
+Storytrails sits between "I have an idea" and "I have footage to edit." It's not another generation tool—it's a system that captures your creative process.
+
+**Core concept: Trails**
+
+A Trail captures your creative journey for each shot—every prompt iteration, generation, edit, and decision. Unlike arbitrary version folders (v01, v02...), trails are meaningful work blocks with full context.
 
 ## Features
 
-- **Visual timeline**: Drag-and-drop shot arrangement
-- **AI shot descriptions**: Generate detailed shot descriptions from brief notes
-- **Export options**: PDF storyboards, shot lists, and script formats
-- **Collaboration**: Share boards with team members
-
-## Workflow Integration
-
-Storytrails fits into the pre-production phase of video projects. Start with rough ideas, refine them with AI assistance, then export production-ready documents.
-
-## Why AI Assistance?
-
-Writing detailed shot descriptions is time-consuming but essential for communication with crew and clients. AI helps expand brief notes into professional descriptions while you focus on the creative vision.
+- **Visual storyboard** — Organize shots on a familiar grid
+- **Trail tracking** — Every iteration saved with context
+- **Character/location library** — Maintain consistency across shots
+- **Export to edit** — File-based output for your NLE
 
 ## Status
 
-Currently in development. Check the GitHub repository for updates and early access.
+- **v1** — Used in production on a music video project
+- **v2** — Currently in development
+
+First public version available for download soon.

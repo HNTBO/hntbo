@@ -1,0 +1,155 @@
+---
+// Animated HNTBO logo that cycles through revealing the full phrase
+// HOW NOT TO BE OBSOLETE -> HNTBO
+---
+
+<span class="animated-logo" aria-label="How Not To Be Obsolete">
+  <span class="floppy">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 16" width="18" height="16" shape-rendering="crispEdges">
+      <rect x="0" y="0" width="1" height="1" fill="#6b0626"/>
+      <rect x="16" y="0" width="1" height="1" fill="#6b0626"/>
+      <rect x="17" y="1" width="1" height="1" fill="#6b0626"/>
+      <rect x="0" y="15" width="1" height="1" fill="#6b0626"/>
+      <rect x="17" y="15" width="1" height="1" fill="#6b0626"/>
+      <rect x="2" y="0" width="3" height="1" fill="#8f0530"/>
+      <rect x="2" y="1" width="1" height="1" fill="#8f0530"/>
+      <rect x="4" y="1" width="1" height="4" fill="#8f0530"/>
+      <rect x="10" y="1" width="2" height="1" fill="#8f0530"/>
+      <rect x="1" y="2" width="2" height="1" fill="#8f0530"/>
+      <rect x="2" y="3" width="1" height="2" fill="#8f0530"/>
+      <rect x="3" y="5" width="2" height="1" fill="#8f0530"/>
+      <rect x="13" y="5" width="1" height="1" fill="#8f0530"/>
+      <rect x="2" y="7" width="1" height="1" fill="#8f0530"/>
+      <rect x="15" y="7" width="1" height="1" fill="#8f0530"/>
+      <rect x="1" y="0" width="1" height="1" fill="#db1452"/>
+      <rect x="14" y="0" width="2" height="1" fill="#db1452"/>
+      <rect x="0" y="1" width="2" height="1" fill="#db1452"/>
+      <rect x="14" y="1" width="3" height="1" fill="#db1452"/>
+      <rect x="0" y="2" width="1" height="1" fill="#db1452"/>
+      <rect x="14" y="2" width="4" height="4" fill="#db1452"/>
+      <rect x="0" y="3" width="2" height="2" fill="#db1452"/>
+      <rect x="0" y="5" width="3" height="1" fill="#db1452"/>
+      <rect x="0" y="6" width="18" height="1" fill="#db1452"/>
+      <rect x="0" y="7" width="2" height="8" fill="#db1452"/>
+      <rect x="16" y="7" width="2" height="8" fill="#db1452"/>
+      <rect x="1" y="15" width="1" height="1" fill="#db1452"/>
+      <rect x="16" y="15" width="1" height="1" fill="#db1452"/>
+      <rect x="13" y="0" width="1" height="1" fill="#c8426c"/>
+      <rect x="2" y="15" width="1" height="1" fill="#c8426c"/>
+      <rect x="15" y="15" width="1" height="1" fill="#c8426c"/>
+      <rect x="5" y="0" width="8" height="1" fill="#f26e96"/>
+      <rect x="5" y="5" width="8" height="1" fill="#f26e96"/>
+      <rect x="3" y="15" width="12" height="1" fill="#f26e96"/>
+      <rect x="5" y="1" width="5" height="4" fill="#fb779f"/>
+      <rect x="12" y="1" width="2" height="4" fill="#fb779f"/>
+      <rect x="3" y="7" width="12" height="1" fill="#fb779f"/>
+      <rect x="2" y="8" width="14" height="7" fill="#fb779f"/>
+      <rect x="3" y="1" width="1" height="4" fill="#c80542"/>
+      <rect x="10" y="2" width="2" height="3" fill="#c80542"/>
+    </svg>
+  </span>
+  <span class="letter l1">H</span><span class="reveal r1">OW</span>
+  <span class="letter l2">N</span><span class="reveal r2">OT</span>
+  <span class="letter l3">T</span><span class="reveal r3">O</span>
+  <span class="letter l4">B</span><span class="reveal r4">E</span>
+  <span class="letter l5">O</span><span class="reveal r5">BSOLETE</span>
+</span>
+
+<style is:global>
+  .animated-logo {
+    display: inline-flex;
+    align-items: center;
+    font-weight: bold;
+  }
+
+  .animated-logo .floppy {
+    display: inline-flex;
+    margin-right: 0.4em;
+  }
+
+  .animated-logo .floppy svg {
+    width: 0.85em;
+    height: 0.85em;
+  }
+
+  .animated-logo .floppy.rot-0 { transform: rotate(0deg); }
+  .animated-logo .floppy.rot-1 { transform: rotate(90deg); }
+  .animated-logo .floppy.rot-2 { transform: rotate(180deg); }
+  .animated-logo .floppy.rot-3 { transform: rotate(270deg); }
+  .animated-logo .floppy.rot-4 { transform: rotate(360deg); }
+  .animated-logo .floppy.rot-5 { transform: rotate(450deg); }
+
+  .animated-logo .letter {
+    display: inline-block;
+  }
+
+  .animated-logo .letter.active {
+    color: #ff2f72 !important;
+  }
+
+  .animated-logo .reveal {
+    display: none;
+    color: #ff2f72 !important;
+  }
+
+  .animated-logo .reveal.visible {
+    display: inline;
+    margin-left: 0.05em;
+    margin-right: 0.05em;
+  }
+</style>
+
+<script>
+  const logo = document.querySelector('.animated-logo');
+  if (logo) {
+    const reveals = logo.querySelectorAll('.reveal');
+    const letters = logo.querySelectorAll('.letter');
+    const floppy = logo.querySelector('.floppy');
+
+    const setRotation = (rotation: number) => {
+      if (floppy) {
+        floppy.classList.remove('rot-0', 'rot-1', 'rot-2', 'rot-3', 'rot-4', 'rot-5');
+        floppy.classList.add(`rot-${rotation}`);
+      }
+    };
+
+    const showReveal = (index: number, rotation: number) => {
+      // Hide all reveals and remove active from letters
+      reveals.forEach(r => r.classList.remove('visible'));
+      letters.forEach(l => l.classList.remove('active'));
+
+      // Update floppy rotation
+      setRotation(rotation);
+
+      // Show the target reveal and highlight its letter
+      if (index >= 0 && index < reveals.length) {
+        reveals[index].classList.add('visible');
+        letters[index].classList.add('active');
+      }
+    };
+
+    const runCycle = () => {
+      const timing = [
+        { reveal: 0, delay: 0, rot: 1 },        // HOW - 90°
+        { reveal: 1, delay: 2000, rot: 2 },     // NOT - 180°
+        { reveal: 2, delay: 4000, rot: 3 },     // TO - 270°
+        { reveal: 3, delay: 6000, rot: 4 },     // BE - 360°
+        { reveal: 4, delay: 8000, rot: 5 },     // OBSOLETE - 450°
+        { reveal: -1, delay: 10000, rot: 0 },   // Back to HNTBO - reset to 0°
+      ];
+
+      timing.forEach(({ reveal, delay, rot }) => {
+        setTimeout(() => showReveal(reveal, rot), delay);
+      });
+
+      // Wait 5s at HNTBO, then restart cycle
+      setTimeout(runCycle, 15000);
+    };
+
+    // Initialize floppy at rot-0
+    if (floppy) floppy.classList.add('rot-0');
+
+    // Start after a short delay
+    setTimeout(runCycle, 2000);
+  }
+</script>

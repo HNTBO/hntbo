@@ -1,43 +1,32 @@
 ---
 title: "Folder Manager"
-description: "Python utility for organizing project folders with consistent naming conventions and structure templates."
+description: "A desktop app for cleaning up empty folders, duplicating folder structures, and flattening nested files."
 githubUrl: "https://github.com/HNTBO/folder-manager"
 image: "/images/tools/folder-manager.jpg"
-tags: ["Python", "Utility", "Organization"]
-featured: false
+tags: ["Python", "Windows", "Utility"]
+featured: true
 isLive: false
+downloadUrl: "https://github.com/HNTBO/folder-manager/releases"
+downloadLabel: "Download"
 ---
 
 ## Overview
 
-A command-line tool for creating and managing project folder structures. Designed for creative professionals who work across multiple projects and need consistent organization.
+A modern desktop application for managing folders on Windows. Three tools in one:
+
+- **Delete Empty Folders** — Scan and remove empty folder hierarchies
+- **Duplicate Structure** — Copy a folder tree without files (great for project templates)
+- **Flatten to Root** — Move all nested files to one folder
 
 ## Features
 
-- **Template system**: Define reusable folder structures
-- **Naming conventions**: Automatic date prefixes and slug generation
-- **Batch operations**: Create multiple project folders at once
-- **Cross-platform**: Works on Windows, macOS, and Linux
+- Preview before action—always see what will change
+- Confirmation dialogs for destructive operations
+- Detailed logging of all operations
+- Built with Python and CustomTkinter
 
-## Why This Exists
+## Use Cases
 
-After years of manually creating project folders and inevitably ending up with inconsistent naming, I built this tool to automate the process. Every project now starts with the same organized structure.
-
-## Installation
-
-```bash
-pip install hntbo-folder-manager
-```
-
-## Basic Usage
-
-```bash
-# Create a new project with the default template
-folder-manager create "Client Name - Project Title"
-
-# List available templates
-folder-manager templates
-
-# Create with a specific template
-folder-manager create "Video Project" --template video
-```
+- Clean up old project folders cluttered with empty directories
+- Set up consistent folder structures for new projects
+- Flatten downloads or assets scattered in subfolders

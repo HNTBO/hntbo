@@ -26,6 +26,8 @@ const tools = defineCollection({
     featured: z.boolean().optional().default(false),
     isLive: z.boolean().optional().default(false),
     livePath: z.string().optional(),
+    downloadUrl: z.string().optional(),
+    downloadLabel: z.string().optional(),
   }),
 });
 
