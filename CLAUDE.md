@@ -45,6 +45,29 @@ accent:         #ff2f72    /* Pink - distinct from fmotion's orange */
 accent-hover:   #ff5a8f
 ```
 
+## Button Design System
+
+Two button variants with shared characteristics:
+
+### Shared Properties
+- **Background**: `bg-surface` (same for both)
+- **Hover state**: Solid accent fill (`bg-accent`, `text-background`) - identical for both
+- **Border**: 1px, consistent sizing
+
+### Accent Button (`.btn-primary`)
+- **Use for**: Primary actions with icons (Subscribe, Download, Get in Touch)
+- **Default**: Accent border, accent text, accent icon
+- **Rule**: Always include an icon (YouTube, download, mail, etc.)
+
+### Secondary Button (`.btn-secondary`)
+- **Use for**: Alternative actions, navigation
+- **Default**: Gray border (`border-border`), white text (`text-text-primary`)
+
+### Why This Design
+- Accent buttons draw attention through color, not fill weight
+- Both buttons share the same hover treatment to avoid confusion
+- Icons reinforce the accent button's primary role
+
 ## Key Files
 
 ```
@@ -78,6 +101,12 @@ Currently stub pages - content will be populated with:
 - GitHub: HNTBO
 - LinkedIn: frederic-pons-fmotion
 - Instagram: @hntbo
+
+## Content Guidelines
+
+### YouTube Tutorials
+- **Titles**: Use the exact same title as on YouTube. Do not reinterpret or rewrite titles.
+- **Video IDs**: Get the ID from the YouTube URL (e.g., `dQw4w9WgXcQ` from `youtube.com/watch?v=dQw4w9WgXcQ`)
 
 ## Related
 

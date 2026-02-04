@@ -1,0 +1,801 @@
+---
+// AudioVisualizer component - adapted from audio_visualizer_1.15.html
+// Restyled for HNTBO theme (pink accent #ff2f72, surface #12141a)
+---
+
+<div class="av-container">
+  <div class="av-card">
+    <h2 class="av-title">Audio Visualizer</h2>
+    <div class="av-controls">
+      <div>
+        <label for="av-mode">Input source</label>
+        <select id="av-mode">
+          <option value="mic">Microphone</option>
+          <option value="tab">Share a tab's audio</option>
+        </select>
+      </div>
+      <div id="av-micWrap">
+        <label for="av-micSelect">Microphone</label>
+        <select id="av-micSelect"></select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="av-startBtn" class="av-btn-primary">Start</button>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="av-stopBtn" disabled>Stop</button>
+      </div>
+    </div>
+    <div id="av-msg" class="av-msg"></div>
+    <p class="av-hint">For tab audio: choose <b>Share a tab's audio</b> → Start → select <i>Chrome Tab</i> and the tab that plays audio, ensure <i>Share tab audio</i> is checked.</p>
+  </div>
+
+  <div class="av-card">
+    <h2 class="av-title">Presets</h2>
+    <div class="av-controls av-preset-controls">
+      <div>
+        <label for="av-presetSelect">Choose preset</label>
+        <select id="av-presetSelect"></select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="av-applyPreset">Apply</button>
+      </div>
+      <div>
+        <label for="av-presetName">Name</label>
+        <input id="av-presetName" type="text" placeholder="New preset name" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="av-savePreset" class="av-btn-primary">Save / Update</button>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="av-deletePreset">Delete</button>
+      </div>
+    </div>
+    <p class="av-preset-hint">Presets save only visual settings (colors, glow, corners, noise, bars, and current viz tab). Stored locally in your browser.</p>
+  </div>
+
+  <div class="av-card">
+    <div class="av-viz-wrap">
+      <canvas id="av-viz"></canvas>
+    </div>
+    <div class="av-tabs" id="av-tabs">
+      <div class="av-tab active" data-viz="bars">Bars</div>
+      <div class="av-tab" data-viz="osc">Oscilloscope</div>
+    </div>
+    <div class="av-grid">
+      <div>
+        <label for="av-fg">Bars/Wave color</label>
+        <input id="av-fg" type="color" value="#ff2f72" />
+      </div>
+      <div>
+        <label for="av-bg">Canvas background</label>
+        <input id="av-bg" type="color" value="#0a0b10" />
+      </div>
+      <div>
+        <label for="av-glow">Glow</label>
+        <div class="av-pair"><input id="av-glow" type="range" min="0" max="40" step="1" value="14" /><input id="av-glowN" type="number" min="0" max="40" step="1" value="14" /></div>
+      </div>
+      <div>
+        <label for="av-radius">Bar corner radius</label>
+        <div class="av-pair"><input id="av-radius" type="range" min="0" max="24" step="1" value="12" /><input id="av-radiusN" type="number" min="0" max="24" step="1" value="12" /></div>
+      </div>
+      <div>
+        <label for="av-noiseAmp">Noise amplitude %</label>
+        <div class="av-pair"><input id="av-noiseAmp" type="range" min="0" max="100" step="0.1" value="12" /><input id="av-noiseAmpN" type="number" min="0" max="100" step="0.1" value="12" /></div>
+      </div>
+      <div>
+        <label for="av-noiseHz">Noise speed (Hz)</label>
+        <div class="av-pair"><input id="av-noiseHz" type="range" min="0" max="5" step="0.05" value="0.6" /><input id="av-noiseHzN" type="number" min="0" max="5" step="0.05" value="0.6" /></div>
+      </div>
+      <div>
+        <label for="av-barsCount">Bars per side</label>
+        <div class="av-pair"><input id="av-barsCount" type="range" min="6" max="64" step="1" value="20" /><input id="av-barsCountN" type="number" min="6" max="64" step="1" value="20" /></div>
+      </div>
+    </div>
+  </div>
+
+  <video id="av-sink" muted playsinline style="display:none"></video>
+</div>
+
+<style>
+  .av-container {
+    --av-gap: 12px;
+    --av-bg: #0a0b10;
+    --av-panel: #12141a;
+    --av-border: #252833;
+    --av-ink: #f5f5f7;
+    --av-ink-secondary: #8e8e93;
+    --av-accent: #ff2f72;
+    --av-accent-hover: #ff5a8f;
+    display: grid;
+    gap: var(--av-gap);
+  }
+
+  .av-card {
+    background: var(--av-panel);
+    border: 1px solid var(--av-border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .av-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    color: var(--av-ink);
+  }
+
+  .av-controls {
+    display: grid;
+    gap: var(--av-gap);
+    grid-template-columns: 1fr 1fr auto auto;
+    align-items: end;
+  }
+
+  .av-preset-controls {
+    grid-template-columns: 1fr auto 1fr auto auto;
+  }
+
+  @media (max-width: 900px) {
+    .av-controls {
+      grid-template-columns: 1fr 1fr;
+    }
+    .av-preset-controls {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .av-container label {
+    font-size: 12px;
+    color: var(--av-ink-secondary);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .av-container select,
+  .av-container button,
+  .av-container input[type="color"],
+  .av-container input[type="range"],
+  .av-container input[type="number"],
+  .av-container input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--av-border);
+    background: var(--av-bg);
+    color: var(--av-ink);
+    font-family: inherit;
+    font-size: 14px;
+  }
+
+  .av-container button {
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .av-container button:hover:not(:disabled) {
+    border-color: var(--av-accent);
+  }
+
+  .av-btn-primary {
+    background: var(--av-accent) !important;
+    border-color: var(--av-accent) !important;
+    color: var(--av-bg) !important;
+  }
+
+  .av-btn-primary:hover:not(:disabled) {
+    background: var(--av-accent-hover) !important;
+    border-color: var(--av-accent-hover) !important;
+  }
+
+  .av-container button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .av-msg {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #ffb3b3;
+    min-height: 1.4em;
+  }
+
+  .av-hint,
+  .av-preset-hint {
+    font-size: 13px;
+    color: var(--av-ink-secondary);
+    margin-top: 8px;
+    margin-bottom: 0;
+  }
+
+  .av-preset-hint {
+    font-size: 12px;
+  }
+
+  .av-viz-wrap {
+    position: relative;
+  }
+
+  #av-viz {
+    width: 100%;
+    height: 420px;
+    background: var(--av-bg);
+    border-radius: 16px;
+    display: block;
+  }
+
+  .av-tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .av-tab {
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--av-border);
+    background: var(--av-bg);
+    cursor: pointer;
+    user-select: none;
+    color: var(--av-ink-secondary);
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+
+  .av-tab:hover {
+    border-color: var(--av-accent);
+    color: var(--av-ink);
+  }
+
+  .av-tab.active {
+    background: rgba(255, 47, 114, 0.15);
+    border-color: var(--av-accent);
+    color: var(--av-accent);
+  }
+
+  .av-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--av-gap);
+    margin-top: 10px;
+  }
+
+  @media (max-width: 1200px) {
+    .av-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .av-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .av-pair {
+    display: grid;
+    grid-template-columns: 1fr 90px;
+    gap: 8px;
+    align-items: center;
+  }
+</style>
+
+<script>
+  // Scoped audio visualizer script
+  (function() {
+    const modeEl = document.getElementById('av-mode') as HTMLSelectElement;
+    const micWrap = document.getElementById('av-micWrap') as HTMLDivElement;
+    const micSelect = document.getElementById('av-micSelect') as HTMLSelectElement;
+    const startBtn = document.getElementById('av-startBtn') as HTMLButtonElement;
+    const stopBtn = document.getElementById('av-stopBtn') as HTMLButtonElement;
+    const msg = document.getElementById('av-msg') as HTMLDivElement;
+    const sink = document.getElementById('av-sink') as HTMLVideoElement;
+
+    const canvas = document.getElementById('av-viz') as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+
+    const tabsEl = document.getElementById('av-tabs') as HTMLDivElement;
+    const fgEl = document.getElementById('av-fg') as HTMLInputElement;
+    const bgEl = document.getElementById('av-bg') as HTMLInputElement;
+    const glowEl = document.getElementById('av-glow') as HTMLInputElement;
+    const radiusEl = document.getElementById('av-radius') as HTMLInputElement;
+    const noiseAmpEl = document.getElementById('av-noiseAmp') as HTMLInputElement;
+    const noiseHzEl = document.getElementById('av-noiseHz') as HTMLInputElement;
+    const barsCountEl = document.getElementById('av-barsCount') as HTMLInputElement;
+    const glowN = document.getElementById('av-glowN') as HTMLInputElement;
+    const radiusN = document.getElementById('av-radiusN') as HTMLInputElement;
+    const noiseAmpN = document.getElementById('av-noiseAmpN') as HTMLInputElement;
+    const noiseHzN = document.getElementById('av-noiseHzN') as HTMLInputElement;
+    const barsCountN = document.getElementById('av-barsCountN') as HTMLInputElement;
+
+    const presetSelect = document.getElementById('av-presetSelect') as HTMLSelectElement;
+    const applyPresetBtn = document.getElementById('av-applyPreset') as HTMLButtonElement;
+    const presetNameEl = document.getElementById('av-presetName') as HTMLInputElement;
+    const savePresetBtn = document.getElementById('av-savePreset') as HTMLButtonElement;
+    const deletePresetBtn = document.getElementById('av-deletePreset') as HTMLButtonElement;
+
+    function fitCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    fitCanvas();
+    window.addEventListener('resize', fitCanvas);
+
+    function setMsg(t: string) { msg.textContent = t || ''; }
+
+    let audioCtx: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let srcNode: MediaStreamAudioSourceNode | null = null;
+    let stream: MediaStream | null = null;
+    let rafId: number = 0;
+    let currentDeviceId = 'default';
+    let vizMode = 'bars';
+
+    function secureOk() {
+      return location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    }
+
+    async function primePermission() {
+      try {
+        const tmp = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tmp.getTracks().forEach(t => t.stop());
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    async function listMics() {
+      const devs = await navigator.mediaDevices.enumerateDevices();
+      const mics = devs.filter(d => d.kind === 'audioinput');
+      const prev = currentDeviceId;
+      micSelect.innerHTML = '';
+      const def = document.createElement('option');
+      def.value = 'default';
+      def.textContent = 'Default microphone';
+      micSelect.appendChild(def);
+      mics.forEach((m, i) => {
+        const opt = document.createElement('option');
+        opt.value = m.deviceId || 'default';
+        opt.textContent = m.label || `Microphone ${i + 1}`;
+        micSelect.appendChild(opt);
+      });
+      const values = Array.from(micSelect.options).map(o => o.value);
+      if (values.includes(prev)) micSelect.value = prev;
+      else { micSelect.value = 'default'; currentDeviceId = 'default'; }
+    }
+
+    async function getMicStream(deviceId: string) {
+      const constraints = deviceId && deviceId !== 'default' ? { deviceId: { exact: deviceId } } : {};
+      return navigator.mediaDevices.getUserMedia({
+        audio: {
+          ...constraints,
+          channelCount: { ideal: 2 },
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      });
+    }
+
+    async function getTabStream() {
+      const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      sink.srcObject = s;
+      try { await sink.play(); } catch {}
+      return s;
+    }
+
+    async function setupAudio(s: MediaStream) {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.82;
+      srcNode = audioCtx.createMediaStreamSource(s);
+      srcNode.connect(analyser);
+      await audioCtx.resume();
+      startLoop();
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      canvas.style.background = bgEl.value;
+    }
+
+    function roundRect(x: number, y: number, w: number, h: number, r: number) {
+      const rr = Math.min(r, w / 2, Math.abs(h) / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.lineTo(x + w - rr, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + (h > 0 ? rr : -rr));
+      ctx.lineTo(x + w, y + h - (h > 0 ? rr : -rr));
+      ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+      ctx.lineTo(x + rr, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - (h > 0 ? rr : -rr));
+      ctx.lineTo(x, y + (h > 0 ? rr : -rr));
+      ctx.quadraticCurveTo(x, y, x + rr, y);
+      ctx.closePath();
+    }
+
+    function drawCapsule(x: number, centerY: number, w: number, halfH: number, r: number) {
+      const totalH = Math.max(0, halfH * 2);
+      if (totalH <= 0.5) return;
+      const rUsed = Math.min(r, w * 0.5, totalH * 0.5);
+      if (totalH <= 2 * rUsed + 0.5) {
+        const rad = rUsed;
+        ctx.beginPath();
+        ctx.arc(x + w / 2, centerY, rad, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        roundRect(x, centerY - halfH, w, totalH, rUsed);
+        ctx.fill();
+      }
+    }
+
+    function fract(x: number) { return x - Math.floor(x); }
+    function rand01(x: number) { return fract(Math.sin(x * 127.1 + 311.7) * 43758.5453123); }
+    function noise1(x: number, seed: number) {
+      const i = Math.floor(x), f = x - i;
+      const u = f * f * (3 - 2 * f);
+      const a = rand01(i + seed), b = rand01(i + 1 + seed);
+      return a + (b - a) * u;
+    }
+
+    function drawBars(timeSec: number, freq: Uint8Array) {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      const centerX = w / 2, centerY = h / 2;
+      const sidePad = Math.round(w * 0.06);
+      const N = Math.min(64, parseInt(barsCountEl.value, 10) || 20);
+      const Wavail = Math.max(0, w - 2 * sidePad);
+      const minBarW = 2;
+      const targetGap = Math.max(1, Math.round(w * 0.004));
+      let gap = Math.min(targetGap, (Wavail - 2 * N * minBarW) / Math.max(1, (2 * N - 1)));
+      if (gap < 0) gap = 0;
+      const centerGap = gap;
+      const barW = Math.max(0, (Wavail - (2 * N - 1) * gap) / (2 * N));
+
+      ctx.shadowBlur = parseFloat(glowEl.value) || 0;
+      ctx.shadowColor = fgEl.value;
+      ctx.fillStyle = fgEl.value;
+      const radius = parseFloat(radiusEl.value) || 0;
+      const amp = (parseFloat(noiseAmpEl.value) || 0) / 100;
+      const hz = parseFloat(noiseHzEl.value) || 0;
+
+      const M = freq.length;
+      const edge = (i: number) => Math.floor(Math.min(M, Math.max(0, Math.pow(i / N, 1.6) * M)));
+
+      for (let b = 0; b < N; b++) {
+        const s = edge(b), e = edge(b + 1);
+        let sum = 0, wsum = 0;
+        for (let i = s; i < e; i++) {
+          const wt = 0.7 + 0.6 * (i / (M - 1));
+          sum += freq[i] * wt;
+          wsum += wt;
+        }
+        const avg = (e > s && wsum > 0) ? (sum / wsum) : 0;
+        const base = Math.pow(avg / 255, 0.65);
+        const nL = noise1(timeSec * hz + b * 0.73, 101.3);
+        const nR = noise1(timeSec * hz + b * 0.91 + 7.7, 207.9);
+        const halfH_L = base * ((1 - amp) + amp * nL) * (centerY - 8);
+        const halfH_R = base * ((1 - amp) + amp * nR) * (centerY - 8);
+        const xL = centerX - centerGap / 2 - (b + 1) * barW - b * gap;
+        const xR = centerX + centerGap / 2 + b * (barW + gap);
+        drawCapsule(xL, centerY, barW, halfH_L, radius);
+        drawCapsule(xR, centerY, barW, halfH_R, radius);
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    function drawOsc(timeData: Uint8Array) {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = fgEl.value;
+      ctx.shadowBlur = parseFloat(glowEl.value) || 0;
+      ctx.shadowColor = fgEl.value;
+      ctx.beginPath();
+      const step = w / timeData.length;
+      for (let i = 0; i < timeData.length; i++) {
+        const v = (timeData[i] - 128) / 128;
+        const x = i * step;
+        const y = h * 0.5 + v * (h * 0.45);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    const FRAME_MS = 1000 / 30;
+    let lastFrame = 0;
+
+    function loop(now: number) {
+      if (!lastFrame) lastFrame = now;
+      const delta = now - lastFrame;
+      if (delta >= FRAME_MS) {
+        lastFrame = now - (delta % FRAME_MS);
+        draw(now);
+      }
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function startLoop() {
+      lastFrame = 0;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function draw(now: number) {
+      clearCanvas();
+      if (!analyser) return;
+      if (vizMode === 'bars') {
+        const F = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(F);
+        drawBars(now / 1000, F);
+      } else {
+        const T = new Uint8Array(analyser.fftSize);
+        analyser.getByteTimeDomainData(T);
+        drawOsc(T);
+      }
+    }
+
+    async function start() {
+      setMsg('');
+      const isMic = modeEl.value === 'mic';
+      if (isMic && !secureOk()) {
+        setMsg('Open via https:// or http://localhost to use the microphone.');
+        return;
+      }
+      startBtn.textContent = 'Starting...';
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      micSelect.disabled = isMic;
+      modeEl.disabled = true;
+      try {
+        if (isMic) {
+          const requestedId = micSelect.value || 'default';
+          stream = await getMicStream(requestedId);
+          const track = stream.getAudioTracks()[0];
+          const realId = (track.getSettings && track.getSettings().deviceId) || requestedId || 'default';
+          currentDeviceId = realId;
+          await listMics();
+          micSelect.value = currentDeviceId;
+        } else {
+          stream = await getTabStream();
+        }
+        await setupAudio(stream);
+        startBtn.textContent = 'Started';
+      } catch (err: any) {
+        setMsg(err && err.message ? err.message : String(err));
+        startBtn.textContent = 'Start';
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        micSelect.disabled = false;
+        modeEl.disabled = false;
+      }
+    }
+
+    function stop() {
+      cancelAnimationFrame(rafId);
+      if (srcNode) try { srcNode.disconnect(); } catch {}
+      if (audioCtx) try { audioCtx.close(); } catch {}
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      sink.srcObject = null;
+      startBtn.textContent = 'Start';
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      micSelect.disabled = false;
+      modeEl.disabled = false;
+    }
+
+    tabsEl.addEventListener('click', (e) => {
+      const t = (e.target as HTMLElement).closest('.av-tab') as HTMLElement | null;
+      if (!t) return;
+      tabsEl.querySelectorAll('.av-tab').forEach(el => el.classList.remove('active'));
+      t.classList.add('active');
+      vizMode = t.dataset.viz || 'bars';
+    });
+
+    modeEl.addEventListener('change', () => {
+      micWrap.style.display = (modeEl.value === 'mic') ? 'block' : 'none';
+    });
+
+    micSelect.addEventListener('change', () => {
+      currentDeviceId = micSelect.value || 'default';
+    });
+
+    bgEl.addEventListener('input', () => {
+      canvas.style.background = bgEl.value;
+    });
+
+    function bindPair(range: HTMLInputElement, number: HTMLInputElement) {
+      number.value = range.value;
+      range.addEventListener('input', () => { number.value = range.value; });
+      function commit() {
+        let v = number.value;
+        if (v === '' || v === null) return;
+        let val = parseFloat(v);
+        if (isNaN(val)) return;
+        const min = number.min !== '' ? parseFloat(number.min) : -Infinity;
+        const max = number.max !== '' ? parseFloat(number.max) : Infinity;
+        if (val < min) val = min;
+        if (val > max) val = max;
+        const step = parseFloat(range.step || '1');
+        if (Number.isFinite(step) && Math.abs(step - Math.round(step)) < 1e-9) {
+          val = Math.round(val);
+        }
+        range.value = String(val);
+        number.value = String(val);
+      }
+      number.addEventListener('change', commit);
+      number.addEventListener('blur', commit);
+    }
+
+    bindPair(glowEl, glowN);
+    bindPair(radiusEl, radiusN);
+    bindPair(noiseAmpEl, noiseAmpN);
+    bindPair(noiseHzEl, noiseHzN);
+    bindPair(barsCountEl, barsCountN);
+
+    startBtn.addEventListener('click', start);
+    stopBtn.addEventListener('click', stop);
+
+    navigator.mediaDevices.addEventListener('devicechange', async () => {
+      if (modeEl.value !== 'mic') return;
+      await listMics();
+      const values = Array.from(micSelect.options).map(o => o.value);
+      if (!values.includes(currentDeviceId)) {
+        currentDeviceId = 'default';
+        micSelect.value = 'default';
+      } else {
+        micSelect.value = currentDeviceId;
+      }
+    });
+
+    // Presets
+    const PRESETS_KEY = 'av_presets_v2';
+
+    interface VisualConfig {
+      vizMode: string;
+      fg: string;
+      bg: string;
+      glow: number;
+      radius: number;
+      noiseAmp: number;
+      noiseHz: number;
+      barsCount: number;
+    }
+
+    function getCurrentVisualConfig(): VisualConfig {
+      return {
+        vizMode,
+        fg: fgEl.value,
+        bg: bgEl.value,
+        glow: parseFloat(glowEl.value) || 0,
+        radius: parseFloat(radiusEl.value) || 0,
+        noiseAmp: parseFloat(noiseAmpEl.value) || 0,
+        noiseHz: parseFloat(noiseHzEl.value) || 0,
+        barsCount: parseInt(barsCountEl.value, 10) || 20
+      };
+    }
+
+    function applyConfig(cfg: VisualConfig | null) {
+      if (!cfg) return;
+      vizMode = cfg.vizMode === 'osc' ? 'osc' : 'bars';
+      tabsEl.querySelectorAll('.av-tab').forEach(el => {
+        el.classList.toggle('active', (el as HTMLElement).dataset.viz === vizMode);
+      });
+      function setRangePair(range: HTMLInputElement, number: HTMLInputElement, val: number | string) {
+        range.value = String(val);
+        number.value = String(val);
+      }
+      fgEl.value = cfg.fg || fgEl.value;
+      bgEl.value = cfg.bg || bgEl.value;
+      canvas.style.background = bgEl.value;
+      setRangePair(glowEl, glowN, cfg.glow ?? glowEl.value);
+      setRangePair(radiusEl, radiusN, cfg.radius ?? radiusEl.value);
+      setRangePair(noiseAmpEl, noiseAmpN, cfg.noiseAmp ?? noiseAmpEl.value);
+      setRangePair(noiseHzEl, noiseHzN, cfg.noiseHz ?? noiseHzEl.value);
+      setRangePair(barsCountEl, barsCountN, cfg.barsCount ?? barsCountEl.value);
+    }
+
+    function readPresets(): Record<string, VisualConfig> {
+      try { return JSON.parse(localStorage.getItem(PRESETS_KEY) || '{}'); } catch { return {}; }
+    }
+
+    function writePresets(obj: Record<string, VisualConfig>) {
+      localStorage.setItem(PRESETS_KEY, JSON.stringify(obj));
+    }
+
+    function refreshPresetSelect() {
+      const presets = readPresets();
+      const names = Object.keys(presets).sort((a, b) => a.localeCompare(b));
+      presetSelect.innerHTML = '';
+      names.forEach(n => {
+        const o = document.createElement('option');
+        o.value = n;
+        o.textContent = n;
+        presetSelect.appendChild(o);
+      });
+      if (names.length) { presetSelect.value = names[0]; }
+    }
+
+    function seedDefaultsIfEmpty() {
+      const presets = readPresets();
+      if (Object.keys(presets).length) { refreshPresetSelect(); return; }
+      presets["HNTBO Pink"] = {
+        vizMode: 'bars',
+        fg: '#ff2f72',
+        bg: '#0a0b10',
+        glow: 14,
+        radius: 12,
+        noiseAmp: 12,
+        noiseHz: 0.6,
+        barsCount: 20
+      };
+      presets["Blue Classic"] = {
+        vizMode: 'bars',
+        fg: '#83aaff',
+        bg: '#0a0f15',
+        glow: 14,
+        radius: 12,
+        noiseAmp: 12,
+        noiseHz: 0.6,
+        barsCount: 20
+      };
+      writePresets(presets);
+      refreshPresetSelect();
+    }
+
+    applyPresetBtn.addEventListener('click', () => {
+      const name = presetSelect.value;
+      if (!name) return;
+      const presets = readPresets();
+      applyConfig(presets[name]);
+      setMsg(`Applied preset: ${name}`);
+    });
+
+    savePresetBtn.addEventListener('click', () => {
+      const name = (presetNameEl.value || presetSelect.value || '').trim();
+      if (!name) { setMsg('Enter a preset name.'); return; }
+      const presets = readPresets();
+      presets[name] = getCurrentVisualConfig();
+      writePresets(presets);
+      refreshPresetSelect();
+      presetSelect.value = name;
+      setMsg(`Saved preset: ${name}`);
+    });
+
+    deletePresetBtn.addEventListener('click', () => {
+      const name = presetSelect.value;
+      if (!name) return;
+      const presets = readPresets();
+      if (!(name in presets)) return;
+      if (!confirm(`Delete preset "${name}"?`)) return;
+      delete presets[name];
+      writePresets(presets);
+      refreshPresetSelect();
+      setMsg(`Deleted preset: ${name}`);
+    });
+
+    // Boot
+    (async () => {
+      if (secureOk()) { await primePermission(); }
+      await listMics();
+      micSelect.value = currentDeviceId;
+      micWrap.style.display = 'block';
+      fitCanvas();
+      canvas.style.background = bgEl.value;
+      seedDefaultsIfEmpty();
+    })();
+  })();
+</script>

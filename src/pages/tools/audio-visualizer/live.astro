@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AudioVisualizer from '../../../components/AudioVisualizer.astro';
+---
+
+<BaseLayout
+  title="Audio Visualizer - Live Demo"
+  description="Real-time audio visualization tool with customizable bars and oscilloscope modes."
+>
+  <section class="pt-32 pb-16 md:pt-40 md:pb-24">
+    <div class="container">
+      <a
+        href="/tools/audio-visualizer"
+        class="inline-flex items-center text-text-secondary hover:text-accent transition-colors mb-8"
+      >
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Audio Visualizer
+      </a>
+
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
+        Audio Visualizer
+      </h1>
+      <p class="text-text-secondary text-lg max-w-2xl mb-8">
+        Visualize audio from your microphone or browser tab in real-time.
+      </p>
+
+      <AudioVisualizer />
+
+      <div class="mt-12 p-6 bg-surface rounded-lg border border-border">
+        <h3 class="text-xl font-semibold text-text-primary mb-4">How to Use</h3>
+        <div class="prose">
+          <h4>Microphone Input</h4>
+          <ol>
+            <li>Select <strong>Microphone</strong> from the input source dropdown</li>
+            <li>Choose your preferred microphone device</li>
+            <li>Click <strong>Start</strong> and allow microphone access when prompted</li>
+            <li>Play audio near your microphone to see the visualization</li>
+          </ol>
+
+          <h4>Tab Audio</h4>
+          <ol>
+            <li>Select <strong>Share a tab's audio</strong> from the input source dropdown</li>
+            <li>Click <strong>Start</strong></li>
+            <li>In the sharing dialog, select <strong>Chrome Tab</strong></li>
+            <li>Choose the tab playing audio and ensure <strong>Share tab audio</strong> is checked</li>
+          </ol>
+
+          <h4>Customization</h4>
+          <p>
+            Adjust colors, glow intensity, bar count, and noise parameters to create your perfect visualization.
+            Save your favorite configurations as presets for quick access later.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

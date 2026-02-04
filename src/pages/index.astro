@@ -1,50 +1,24 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Card from '../components/Card.astro';
+import { getCollection } from 'astro:content';
 
-// Placeholder featured videos (replace with real data later)
-const featuredVideos = [
-  {
-    title: 'Getting Started with Houdini',
-    href: 'https://www.youtube.com/@hntbo',
-    image: '',
-    tags: ['Houdini', 'Beginner'],
-  },
-  {
-    title: 'DaVinci Resolve Color Grading',
-    href: 'https://www.youtube.com/@hntbo',
-    image: '',
-    tags: ['DaVinci Resolve', 'Color'],
-  },
-  {
-    title: 'AI Workflow Tips',
-    href: 'https://www.youtube.com/@hntbo',
-    image: '',
-    tags: ['AI', 'Workflow'],
-  },
-];
+// Get featured tutorials from content collection
+const allTutorials = await getCollection('tutorials');
+const featuredTutorials = allTutorials
+  .filter(t => t.data.featured)
+  .sort((a, b) => {
+    const dateA = a.data.publishDate ? new Date(a.data.publishDate).getTime() : 0;
+    const dateB = b.data.publishDate ? new Date(b.data.publishDate).getTime() : 0;
+    return dateB - dateA;
+  })
+  .slice(0, 3);
 
-// Placeholder featured tools (replace with real data later)
-const featuredTools = [
-  {
-    title: 'Prompt Builder',
-    href: 'https://github.com/HNTBO',
-    image: '',
-    tags: ['AI', 'Prompting'],
-  },
-  {
-    title: 'VEX Snippets',
-    href: 'https://github.com/HNTBO',
-    image: '',
-    tags: ['Houdini', 'VEX'],
-  },
-  {
-    title: 'Resolve Macros',
-    href: 'https://github.com/HNTBO',
-    image: '',
-    tags: ['DaVinci Resolve', 'Macros'],
-  },
-];
+// Get featured tools from content collection
+const allTools = await getCollection('tools');
+const featuredTools = allTools
+  .filter(t => t.data.featured)
+  .slice(0, 3);
 ---
 
 <BaseLayout title="Home" description="How Not To Be Obsolete - Tutorials, tools, and insights for creative professionals navigating AI and modern workflows.">
@@ -98,13 +72,12 @@ const featuredTools = [
         </a>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {featuredVideos.map((video) => (
+        {featuredTutorials.map((tutorial) => (
           <Card
-            title={video.title}
-            href={video.href}
-            image={video.image}
-            tags={video.tags}
-            external={true}
+            title={tutorial.data.title}
+            href={`/tutos/${tutorial.slug}`}
+            image={tutorial.data.thumbnail || `https://img.youtube.com/vi/${tutorial.data.youtubeId}/maxresdefault.jpg`}
+            tags={tutorial.data.tags}
           />
         ))}
       </div>
@@ -123,11 +96,10 @@ const featuredTools = [
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {featuredTools.map((tool) => (
           <Card
-            title={tool.title}
-            href={tool.href}
-            image={tool.image}
-            tags={tool.tags}
-            external={true}
+            title={tool.data.title}
+            href={`/tools/${tool.slug}`}
+            image={tool.data.image}
+            tags={tool.data.tags}
           />
         ))}
       </div>

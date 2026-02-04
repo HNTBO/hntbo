@@ -1,8 +1,16 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Card from '../../components/Card.astro';
+import { getCollection } from 'astro:content';
 
-// Placeholder - tutorials will be added later
-const tutorials = [];
+const tutorials = await getCollection('tutorials');
+const sortedTutorials = tutorials.sort((a, b) => {
+  const dateA = a.data.publishDate ? new Date(a.data.publishDate).getTime() : 0;
+  const dateB = b.data.publishDate ? new Date(b.data.publishDate).getTime() : 0;
+  return dateB - dateA;
+});
+
+const allTags = [...new Set(sortedTutorials.flatMap((item) => item.data.tags || []))];
 ---
 
 <BaseLayout title="Tutos" description="Video tutorials on Houdini, DaVinci Resolve, and creative workflows.">
@@ -11,11 +19,22 @@ const tutorials = [];
       <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
         Tutorials
       </h1>
-      <p class="text-text-secondary text-lg max-w-2xl mb-12">
+      <p class="text-text-secondary text-lg max-w-2xl mb-8">
         Video tutorials on Houdini, DaVinci Resolve, After Effects, and modern creative workflows.
       </p>
 
-      {tutorials.length === 0 ? (
+      {allTags.length > 0 && (
+        <div class="flex flex-wrap gap-2 mb-12">
+          <button class="tag filter-btn active" data-filter="all">
+            All
+          </button>
+          {allTags.map((tag) => (
+            <button class="tag filter-btn" data-filter={tag}>{tag}</button>
+          ))}
+        </div>
+      )}
+
+      {sortedTutorials.length === 0 ? (
         <div class="text-center py-16 bg-surface rounded-lg border border-border">
           <svg class="w-16 h-16 mx-auto text-text-secondary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -37,10 +56,81 @@ const tutorials = [];
           </a>
         </div>
       ) : (
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Tutorial cards will go here */}
+        <div id="tutorials-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sortedTutorials.map((tutorial) => (
+            <div class="tutorial-item" data-tags={JSON.stringify(tutorial.data.tags || [])}>
+              <Card
+                title={tutorial.data.title}
+                href={`/tutos/${tutorial.slug}`}
+                image={tutorial.data.thumbnail || `https://img.youtube.com/vi/${tutorial.data.youtubeId}/maxresdefault.jpg`}
+                tags={tutorial.data.tags}
+              />
+            </div>
+          ))}
         </div>
       )}
+
+      <div class="mt-12 text-center">
+        <a
+          href="https://www.youtube.com/@hntbo"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-secondary inline-flex"
+        >
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+          More on YouTube
+        </a>
+      </div>
     </div>
   </section>
 </BaseLayout>
+
+<style>
+  .filter-btn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .filter-btn:hover {
+    border-color: rgba(255, 47, 114, 0.5);
+  }
+
+  .filter-btn.active {
+    background-color: rgba(255, 47, 114, 0.1);
+    border-color: rgba(255, 47, 114, 0.5);
+    color: #ff2f72;
+  }
+
+  .tutorial-item {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .tutorial-item.hidden {
+    display: none;
+  }
+</style>
+
+<script>
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const tutorialItems = document.querySelectorAll('.tutorial-item');
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const filter = btn.getAttribute('data-filter');
+
+      filterBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      tutorialItems.forEach((item) => {
+        const tags = JSON.parse(item.getAttribute('data-tags') || '[]');
+        if (filter === 'all' || tags.includes(filter)) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    });
+  });
+</script>

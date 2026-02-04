@@ -29,7 +29,7 @@ const isActive = (href: string, key: string) => {
     <!-- Desktop Navigation -->
     <div class="hidden md:flex items-center gap-8">
       <ul class="flex items-center gap-8">
-        {navLinks.filter(link => link.key !== 'home').map(({ href, label, key }) => (
+        {navLinks.map(({ href, label, key }) => (
           <li>
             <a
               href={href}

@@ -62,12 +62,25 @@
   }
 
   .btn-primary {
-    @apply bg-accent text-background hover:bg-accent-hover;
+    @apply bg-surface border border-accent text-accent;
+    @apply hover:bg-accent hover:text-background hover:border-accent;
+  }
+
+  .btn-primary svg {
+    @apply text-accent;
+  }
+
+  .btn-primary:hover svg {
+    @apply text-background;
   }
 
   .btn-secondary {
     @apply bg-surface border border-border text-text-primary;
-    @apply hover:border-accent/50;
+    @apply hover:bg-accent hover:text-background hover:border-accent;
+  }
+
+  .btn-secondary:hover svg {
+    @apply text-background;
   }
 
   .tag {
