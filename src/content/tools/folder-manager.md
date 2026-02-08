@@ -4,7 +4,7 @@ description: "A desktop app for cleaning up empty folders, duplicating folder st
 githubUrl: "https://github.com/HNTBO/folder-manager"
 image: "/images/tools/folder-manager.jpg"
 tags: ["Python", "Windows", "Utility"]
-featured: true
+featured: false
 isLive: false
 downloadUrl: "https://github.com/HNTBO/folder-manager/releases"
 downloadLabel: "Download"
