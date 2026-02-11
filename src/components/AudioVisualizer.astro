@@ -389,6 +389,10 @@
 
     async function getTabStream() {
       const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      if (!s.getAudioTracks().length) {
+        s.getTracks().forEach(t => t.stop());
+        throw new Error('No audio track found. Make sure "Share tab audio" is checked when selecting the tab.');
+      }
       sink.srcObject = s;
       try { await sink.play(); } catch {}
       return s;
