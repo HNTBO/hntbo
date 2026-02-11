@@ -67,33 +67,49 @@
       <div class="av-tab" data-viz="osc">Oscilloscope</div>
     </div>
     <div class="av-grid">
-      <div>
-        <label for="av-fg">Bars/Wave color</label>
+      <div data-mode="shared">
+        <label for="av-fg">Color</label>
         <input id="av-fg" type="color" value="#ff2f72" />
       </div>
-      <div>
+      <div data-mode="shared">
         <label for="av-bg">Canvas background</label>
         <input id="av-bg" type="color" value="#0a0b10" />
       </div>
-      <div>
+      <div data-mode="shared">
         <label for="av-glow">Glow</label>
         <div class="av-pair"><input id="av-glow" type="range" min="0" max="40" step="1" value="14" /><input id="av-glowN" type="number" min="0" max="40" step="1" value="14" /></div>
       </div>
-      <div>
+      <div data-mode="bars">
         <label for="av-radius">Bar corner radius</label>
         <div class="av-pair"><input id="av-radius" type="range" min="0" max="24" step="1" value="12" /><input id="av-radiusN" type="number" min="0" max="24" step="1" value="12" /></div>
       </div>
-      <div>
+      <div data-mode="bars">
         <label for="av-noiseAmp">Noise amplitude %</label>
         <div class="av-pair"><input id="av-noiseAmp" type="range" min="0" max="100" step="0.1" value="12" /><input id="av-noiseAmpN" type="number" min="0" max="100" step="0.1" value="12" /></div>
       </div>
-      <div>
+      <div data-mode="bars">
         <label for="av-noiseHz">Noise speed (Hz)</label>
         <div class="av-pair"><input id="av-noiseHz" type="range" min="0" max="5" step="0.05" value="0.6" /><input id="av-noiseHzN" type="number" min="0" max="5" step="0.05" value="0.6" /></div>
       </div>
-      <div>
+      <div data-mode="bars">
         <label for="av-barsCount">Bars per side</label>
         <div class="av-pair"><input id="av-barsCount" type="range" min="6" max="64" step="1" value="20" /><input id="av-barsCountN" type="number" min="6" max="64" step="1" value="20" /></div>
+      </div>
+      <div data-mode="osc" style="display:none">
+        <label for="av-oscLineW">Line width</label>
+        <div class="av-pair"><input id="av-oscLineW" type="range" min="0.5" max="8" step="0.5" value="2.5" /><input id="av-oscLineWN" type="number" min="0.5" max="8" step="0.5" value="2.5" /></div>
+      </div>
+      <div data-mode="osc" style="display:none">
+        <label for="av-oscScale">Vertical scale %</label>
+        <div class="av-pair"><input id="av-oscScale" type="range" min="10" max="100" step="1" value="90" /><input id="av-oscScaleN" type="number" min="10" max="100" step="1" value="90" /></div>
+      </div>
+      <div data-mode="osc" style="display:none">
+        <label for="av-oscRes">Resolution</label>
+        <div class="av-pair"><input id="av-oscRes" type="range" min="1" max="100" step="1" value="100" /><input id="av-oscResN" type="number" min="1" max="100" step="1" value="100" /></div>
+      </div>
+      <div data-mode="osc" style="display:none">
+        <label for="av-oscFill">Fill opacity %</label>
+        <div class="av-pair"><input id="av-oscFill" type="range" min="0" max="100" step="1" value="0" /><input id="av-oscFillN" type="number" min="0" max="100" step="1" value="0" /></div>
       </div>
     </div>
   </div>
@@ -314,6 +330,15 @@
     const noiseHzN = document.getElementById('av-noiseHzN') as HTMLInputElement;
     const barsCountN = document.getElementById('av-barsCountN') as HTMLInputElement;
 
+    const oscLineWEl = document.getElementById('av-oscLineW') as HTMLInputElement;
+    const oscScaleEl = document.getElementById('av-oscScale') as HTMLInputElement;
+    const oscResEl = document.getElementById('av-oscRes') as HTMLInputElement;
+    const oscFillEl = document.getElementById('av-oscFill') as HTMLInputElement;
+    const oscLineWN = document.getElementById('av-oscLineWN') as HTMLInputElement;
+    const oscScaleN = document.getElementById('av-oscScaleN') as HTMLInputElement;
+    const oscResN = document.getElementById('av-oscResN') as HTMLInputElement;
+    const oscFillN = document.getElementById('av-oscFillN') as HTMLInputElement;
+
     const presetSelect = document.getElementById('av-presetSelect') as HTMLSelectElement;
     const applyPresetBtn = document.getElementById('av-applyPreset') as HTMLButtonElement;
     const presetNameEl = document.getElementById('av-presetName') as HTMLInputElement;
@@ -500,22 +525,47 @@
 
     function drawOsc(timeData: Uint8Array) {
       const w = canvas.clientWidth, h = canvas.clientHeight;
-      ctx.lineWidth = 2.5;
+      const lineW = parseFloat(oscLineWEl.value) || 2.5;
+      const scale = (parseFloat(oscScaleEl.value) || 90) / 200;
+      const res = Math.max(1, parseInt(oscResEl.value, 10) || 100);
+      const fillAlpha = (parseFloat(oscFillEl.value) || 0) / 100;
+
+      const total = timeData.length;
+      const used = Math.max(4, Math.round(total * res / 100));
+      const step = Math.max(1, Math.floor(total / used));
+
+      const pts: { x: number; y: number }[] = [];
+      for (let i = 0; i < total; i += step) {
+        const v = (timeData[i] - 128) / 128;
+        pts.push({ x: (i / total) * w, y: h * 0.5 + v * h * scale });
+      }
+
+      ctx.lineWidth = lineW;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.strokeStyle = fgEl.value;
       ctx.shadowBlur = parseFloat(glowEl.value) || 0;
       ctx.shadowColor = fgEl.value;
+
       ctx.beginPath();
-      const step = w / timeData.length;
-      for (let i = 0; i < timeData.length; i++) {
-        const v = (timeData[i] - 128) / 128;
-        const x = i * step;
-        const y = h * 0.5 + v * (h * 0.45);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
       ctx.stroke();
+
+      if (fillAlpha > 0) {
+        ctx.save();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = fillAlpha;
+        ctx.fillStyle = fgEl.value;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, h * 0.5);
+        for (let i = 0; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.lineTo(pts[pts.length - 1].x, h * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
       ctx.shadowBlur = 0;
     }
 
@@ -601,12 +651,20 @@
       modeEl.disabled = false;
     }
 
+    function updateControlVisibility() {
+      document.querySelectorAll('[data-mode]').forEach(el => {
+        const m = (el as HTMLElement).dataset.mode;
+        (el as HTMLElement).style.display = (m === 'shared' || m === vizMode) ? '' : 'none';
+      });
+    }
+
     tabsEl.addEventListener('click', (e) => {
       const t = (e.target as HTMLElement).closest('.av-tab') as HTMLElement | null;
       if (!t) return;
       tabsEl.querySelectorAll('.av-tab').forEach(el => el.classList.remove('active'));
       t.classList.add('active');
       vizMode = t.dataset.viz || 'bars';
+      updateControlVisibility();
     });
 
     modeEl.addEventListener('change', () => {
@@ -649,6 +707,10 @@
     bindPair(noiseAmpEl, noiseAmpN);
     bindPair(noiseHzEl, noiseHzN);
     bindPair(barsCountEl, barsCountN);
+    bindPair(oscLineWEl, oscLineWN);
+    bindPair(oscScaleEl, oscScaleN);
+    bindPair(oscResEl, oscResN);
+    bindPair(oscFillEl, oscFillN);
 
     startBtn.addEventListener('click', start);
     stopBtn.addEventListener('click', stop);
@@ -677,6 +739,10 @@
       noiseAmp: number;
       noiseHz: number;
       barsCount: number;
+      oscLineW: number;
+      oscScale: number;
+      oscRes: number;
+      oscFill: number;
     }
 
     function getCurrentVisualConfig(): VisualConfig {
@@ -688,7 +754,11 @@
         radius: parseFloat(radiusEl.value) || 0,
         noiseAmp: parseFloat(noiseAmpEl.value) || 0,
         noiseHz: parseFloat(noiseHzEl.value) || 0,
-        barsCount: parseInt(barsCountEl.value, 10) || 20
+        barsCount: parseInt(barsCountEl.value, 10) || 20,
+        oscLineW: parseFloat(oscLineWEl.value) || 2.5,
+        oscScale: parseInt(oscScaleEl.value, 10) || 90,
+        oscRes: parseInt(oscResEl.value, 10) || 100,
+        oscFill: parseInt(oscFillEl.value, 10) || 0
       };
     }
 
@@ -710,6 +780,11 @@
       setRangePair(noiseAmpEl, noiseAmpN, cfg.noiseAmp ?? noiseAmpEl.value);
       setRangePair(noiseHzEl, noiseHzN, cfg.noiseHz ?? noiseHzEl.value);
       setRangePair(barsCountEl, barsCountN, cfg.barsCount ?? barsCountEl.value);
+      setRangePair(oscLineWEl, oscLineWN, cfg.oscLineW ?? oscLineWEl.value);
+      setRangePair(oscScaleEl, oscScaleN, cfg.oscScale ?? oscScaleEl.value);
+      setRangePair(oscResEl, oscResN, cfg.oscRes ?? oscResEl.value);
+      setRangePair(oscFillEl, oscFillN, cfg.oscFill ?? oscFillEl.value);
+      updateControlVisibility();
     }
 
     function readPresets(): Record<string, VisualConfig> {
@@ -744,7 +819,11 @@
         radius: 12,
         noiseAmp: 12,
         noiseHz: 0.6,
-        barsCount: 20
+        barsCount: 20,
+        oscLineW: 2.5,
+        oscScale: 90,
+        oscRes: 100,
+        oscFill: 0
       };
       presets["Blue Classic"] = {
         vizMode: 'bars',
@@ -754,7 +833,11 @@
         radius: 12,
         noiseAmp: 12,
         noiseHz: 0.6,
-        barsCount: 20
+        barsCount: 20,
+        oscLineW: 2.5,
+        oscScale: 90,
+        oscRes: 100,
+        oscFill: 0
       };
       writePresets(presets);
       refreshPresetSelect();
@@ -800,6 +883,7 @@
       fitCanvas();
       canvas.style.background = bgEl.value;
       seedDefaultsIfEmpty();
+      updateControlVisibility();
     })();
   })();
 </script>
