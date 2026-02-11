@@ -93,7 +93,7 @@
 
 `contact_email_h2`: Email
 
-`contact_email_label`: hello@fmotion.fr
+`contact_email_label`: contact@hntbo.com
 
 `contact_connect_h2`: Connect
 
