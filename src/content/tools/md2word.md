@@ -1,5 +1,5 @@
 ---
-title: "MD2Word"
+title: "Markdown to Word Converter"
 description: "Convert Markdown to Word documents directly in the browser."
 tags: ["Markdown", "Browser", "Utility"]
 featured: false
