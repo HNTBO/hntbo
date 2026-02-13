@@ -1,0 +1,883 @@
+---
+// FolderManager component — browser-based folder management tool
+// Uses File System Access API (Chromium-only)
+// Pattern: self-contained component with fm- CSS prefix, IIFE script
+---
+
+<!-- Compatibility gate — shown when File System Access API is missing -->
+<div id="fm-compat" class="fm-compat" style="display:none">
+  <div class="fm-card">
+    <h2 class="fm-title">Browser Not Supported</h2>
+    <p class="fm-text">
+      Folder Manager requires the <strong>File System Access API</strong>, which is only available in
+      <strong>Chromium-based browsers</strong> (Chrome, Edge, Brave, Opera).
+    </p>
+    <p class="fm-text">
+      You're welcome to
+      <a href="https://github.com/HNTBO/folder-manager/releases" target="_blank" rel="noopener">
+        download the desktop version
+      </a>
+      instead — it works on any Windows machine.
+    </p>
+  </div>
+</div>
+
+<!-- Main UI — hidden until feature detection passes -->
+<div id="fm-app" class="fm-container" style="display:none">
+  <!-- Tabs -->
+  <div class="fm-card">
+    <div class="fm-tabs" id="fm-tabs">
+      <button class="fm-tab active" data-tab="delete">Delete Empty Folders</button>
+      <button class="fm-tab" data-tab="duplicate">Duplicate Structure</button>
+      <button class="fm-tab" data-tab="count">Count Files</button>
+    </div>
+  </div>
+
+  <!-- Tab: Delete Empty Folders -->
+  <div class="fm-panel" id="fm-panel-delete">
+    <div class="fm-card">
+      <p class="fm-hint">Scan a folder for empty subfolders (no files anywhere in their subtree) and remove them.</p>
+      <div class="fm-row">
+        <button class="fm-btn fm-btn-primary" id="fm-delete-browse">Browse Folder</button>
+        <div class="fm-path" id="fm-delete-path">No folder selected</div>
+      </div>
+      <div class="fm-actions">
+        <button class="fm-btn fm-btn-primary" id="fm-delete-scan" disabled>Scan for Empty Folders</button>
+        <button class="fm-btn fm-btn-danger" id="fm-delete-run" disabled>Delete All Empty</button>
+      </div>
+      <div class="fm-results" id="fm-delete-results"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Duplicate Structure -->
+  <div class="fm-panel" id="fm-panel-duplicate" style="display:none">
+    <div class="fm-card">
+      <p class="fm-hint">Copy a folder's directory tree into a new location — folders only, no files.</p>
+      <div class="fm-row">
+        <button class="fm-btn fm-btn-primary" id="fm-dup-browse-src">Source Folder</button>
+        <div class="fm-path" id="fm-dup-src-path">No source selected</div>
+      </div>
+      <div class="fm-row">
+        <button class="fm-btn fm-btn-primary" id="fm-dup-browse-dest">Destination Folder</button>
+        <div class="fm-path" id="fm-dup-dest-path">No destination selected</div>
+      </div>
+      <div class="fm-actions">
+        <button class="fm-btn fm-btn-primary" id="fm-dup-preview" disabled>Preview Structure</button>
+        <button class="fm-btn fm-btn-primary" id="fm-dup-run" disabled>Create Structure</button>
+      </div>
+      <div class="fm-results" id="fm-dup-results"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Count Files -->
+  <div class="fm-panel" id="fm-panel-count" style="display:none">
+    <div class="fm-card">
+      <p class="fm-hint">Browse a folder to see how many files are at root level vs. nested in subfolders.</p>
+      <div class="fm-row">
+        <button class="fm-btn fm-btn-primary" id="fm-count-browse">Browse Folder</button>
+        <div class="fm-path" id="fm-count-path">No folder selected</div>
+      </div>
+      <div class="fm-actions">
+        <button class="fm-btn fm-btn-primary" id="fm-count-run" disabled>Count Files</button>
+      </div>
+      <div class="fm-results" id="fm-count-results"></div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="fm-status" id="fm-status"></div>
+</div>
+
+<!-- Modal overlay -->
+<div class="fm-modal-overlay" id="fm-modal" style="display:none">
+  <div class="fm-modal">
+    <h3 class="fm-modal-title" id="fm-modal-title">Confirm</h3>
+    <div class="fm-modal-body" id="fm-modal-body"></div>
+    <div class="fm-modal-actions">
+      <button class="fm-btn fm-btn-primary" id="fm-modal-cancel">Cancel</button>
+      <button class="fm-btn fm-btn-danger" id="fm-modal-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ------------------------------------------------------------------ */
+  /* Design tokens — mirrors HNTBO site theme                           */
+  /* ------------------------------------------------------------------ */
+  .fm-container,
+  .fm-compat,
+  .fm-modal-overlay {
+    --fm-bg: #0a0b10;
+    --fm-surface: #12141a;
+    --fm-border: #252833;
+    --fm-ink: #f5f5f7;
+    --fm-ink2: #8e8e93;
+    --fm-accent: #ff2f72;
+    --fm-accent-hover: #ff5a8f;
+    --fm-danger: #ff4444;
+    --fm-danger-hover: #ff6666;
+    --fm-success: #34c759;
+    --fm-radius: 14px;
+    --fm-gap: 12px;
+  }
+
+  .fm-container { display: grid; gap: var(--fm-gap); }
+
+  /* Card */
+  .fm-card {
+    background: var(--fm-surface);
+    border: 1px solid var(--fm-border);
+    border-radius: var(--fm-radius);
+    padding: 20px;
+  }
+
+  .fm-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--fm-ink);
+    margin: 0 0 12px;
+  }
+
+  .fm-text {
+    color: var(--fm-ink2);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 12px;
+  }
+
+  .fm-text a {
+    color: var(--fm-accent);
+    text-decoration: underline;
+  }
+
+  .fm-hint {
+    color: var(--fm-ink2);
+    font-size: 14px;
+    margin: 0 0 16px;
+    line-height: 1.5;
+  }
+
+  /* Tabs */
+  .fm-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .fm-tab {
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--fm-border);
+    background: var(--fm-bg);
+    color: var(--fm-ink2);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+  }
+
+  .fm-tab:hover {
+    border-color: var(--fm-accent);
+    color: var(--fm-ink);
+  }
+
+  .fm-tab.active {
+    background: rgba(255, 47, 114, 0.15);
+    border-color: var(--fm-accent);
+    color: var(--fm-accent);
+  }
+
+  /* Buttons */
+  .fm-btn {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--fm-border);
+    background: var(--fm-bg);
+    color: var(--fm-ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .fm-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .fm-btn-primary {
+    border-color: var(--fm-accent);
+    color: var(--fm-accent);
+  }
+
+  .fm-btn-primary:hover:not(:disabled) {
+    background: var(--fm-accent);
+    color: var(--fm-bg);
+  }
+
+  .fm-btn-danger {
+    border-color: var(--fm-danger);
+    color: var(--fm-danger);
+  }
+
+  .fm-btn-danger:hover:not(:disabled) {
+    background: var(--fm-danger);
+    color: var(--fm-bg);
+  }
+
+  /* Folder picker row */
+  .fm-row {
+    display: flex;
+    gap: var(--fm-gap);
+    align-items: center;
+    margin-bottom: var(--fm-gap);
+  }
+
+  .fm-path {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--fm-border);
+    background: var(--fm-bg);
+    color: var(--fm-ink2);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fm-path.fm-path-active { color: var(--fm-ink); }
+
+  /* Action buttons row */
+  .fm-actions {
+    display: flex;
+    gap: var(--fm-gap);
+    flex-wrap: wrap;
+    margin-bottom: var(--fm-gap);
+  }
+
+  /* Results area */
+  .fm-results {
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--fm-border);
+    background: var(--fm-bg);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--fm-ink2);
+    white-space: pre-wrap;
+    display: none;
+  }
+
+  .fm-results.fm-visible { display: block; }
+
+  .fm-results .fm-line-ok { color: var(--fm-success); }
+  .fm-results .fm-line-err { color: var(--fm-danger); }
+  .fm-results .fm-line-info { color: var(--fm-ink2); }
+
+  /* Status bar */
+  .fm-status {
+    font-size: 13px;
+    color: var(--fm-ink2);
+    min-height: 1.4em;
+    padding: 0 4px;
+  }
+
+  /* Modal */
+  .fm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .fm-modal {
+    background: var(--fm-surface);
+    border: 1px solid var(--fm-border);
+    border-radius: var(--fm-radius);
+    padding: 24px;
+    max-width: 480px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .fm-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--fm-ink);
+    margin: 0 0 12px;
+  }
+
+  .fm-modal-body {
+    color: var(--fm-ink2);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .fm-modal-body pre {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    margin: 8px 0;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--fm-bg);
+    border: 1px solid var(--fm-border);
+    max-height: 30vh;
+    overflow-y: auto;
+  }
+
+  .fm-modal-actions {
+    display: flex;
+    gap: var(--fm-gap);
+    justify-content: flex-end;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Responsive                                                          */
+  /* ------------------------------------------------------------------ */
+  @media (max-width: 640px) {
+    .fm-tab {
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+
+    .fm-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .fm-actions {
+      flex-direction: column;
+    }
+
+    .fm-actions .fm-btn {
+      width: 100%;
+      text-align: center;
+    }
+
+    .fm-modal {
+      max-width: 100%;
+    }
+
+    .fm-modal-actions {
+      flex-direction: column;
+    }
+
+    .fm-modal-actions .fm-btn {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    // ----------------------------------------------------------------
+    // Feature detection
+    // ----------------------------------------------------------------
+    const hasAPI = typeof window.showDirectoryPicker === 'function';
+    const compatEl = document.getElementById('fm-compat') as HTMLDivElement;
+    const appEl = document.getElementById('fm-app') as HTMLDivElement;
+
+    if (!hasAPI) {
+      compatEl.style.display = '';
+      return;
+    }
+    appEl.style.display = '';
+
+    // ----------------------------------------------------------------
+    // DOM refs
+    // ----------------------------------------------------------------
+    const tabsEl = document.getElementById('fm-tabs') as HTMLDivElement;
+    const panels = {
+      delete: document.getElementById('fm-panel-delete') as HTMLDivElement,
+      duplicate: document.getElementById('fm-panel-duplicate') as HTMLDivElement,
+      count: document.getElementById('fm-panel-count') as HTMLDivElement,
+    };
+    const statusEl = document.getElementById('fm-status') as HTMLDivElement;
+
+    // Delete tab
+    const delBrowse = document.getElementById('fm-delete-browse') as HTMLButtonElement;
+    const delPath = document.getElementById('fm-delete-path') as HTMLDivElement;
+    const delScan = document.getElementById('fm-delete-scan') as HTMLButtonElement;
+    const delRun = document.getElementById('fm-delete-run') as HTMLButtonElement;
+    const delResults = document.getElementById('fm-delete-results') as HTMLDivElement;
+
+    // Duplicate tab
+    const dupBrowseSrc = document.getElementById('fm-dup-browse-src') as HTMLButtonElement;
+    const dupSrcPath = document.getElementById('fm-dup-src-path') as HTMLDivElement;
+    const dupBrowseDest = document.getElementById('fm-dup-browse-dest') as HTMLButtonElement;
+    const dupDestPath = document.getElementById('fm-dup-dest-path') as HTMLDivElement;
+    const dupPreview = document.getElementById('fm-dup-preview') as HTMLButtonElement;
+    const dupRun = document.getElementById('fm-dup-run') as HTMLButtonElement;
+    const dupResults = document.getElementById('fm-dup-results') as HTMLDivElement;
+
+    // Count tab
+    const countBrowse = document.getElementById('fm-count-browse') as HTMLButtonElement;
+    const countPath = document.getElementById('fm-count-path') as HTMLDivElement;
+    const countRun = document.getElementById('fm-count-run') as HTMLButtonElement;
+    const countResults = document.getElementById('fm-count-results') as HTMLDivElement;
+
+    // Modal
+    const modalOverlay = document.getElementById('fm-modal') as HTMLDivElement;
+    const modalTitle = document.getElementById('fm-modal-title') as HTMLHeadingElement;
+    const modalBody = document.getElementById('fm-modal-body') as HTMLDivElement;
+    const modalCancel = document.getElementById('fm-modal-cancel') as HTMLButtonElement;
+    const modalConfirm = document.getElementById('fm-modal-confirm') as HTMLButtonElement;
+
+    // ----------------------------------------------------------------
+    // State
+    // ----------------------------------------------------------------
+    // Shared folder handle — used by Delete and Count tabs
+    let folderHandle: FileSystemDirectoryHandle | null = null;
+    let emptyFolders: string[] = [];
+    let dupSrcHandle: FileSystemDirectoryHandle | null = null;
+    let dupDestHandle: FileSystemDirectoryHandle | null = null;
+    let dupFolders: string[] = [];
+
+    // ----------------------------------------------------------------
+    // Helpers
+    // ----------------------------------------------------------------
+    function setStatus(text: string) { statusEl.textContent = text; }
+
+    function showResults(el: HTMLDivElement, html: string) {
+      el.innerHTML = html;
+      el.classList.add('fm-visible');
+    }
+
+    function clearResults(el: HTMLDivElement) {
+      el.innerHTML = '';
+      el.classList.remove('fm-visible');
+    }
+
+    function line(text: string, cls: string = 'fm-line-info') {
+      return `<div class="${cls}">${escHtml(text)}</div>`;
+    }
+
+    function escHtml(s: string) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function setPathDisplay(el: HTMLDivElement, name: string | null) {
+      if (name) {
+        el.textContent = name;
+        el.classList.add('fm-path-active');
+      } else {
+        el.textContent = el.id.includes('src') ? 'No source selected'
+          : el.id.includes('dest') ? 'No destination selected'
+          : 'No folder selected';
+        el.classList.remove('fm-path-active');
+      }
+    }
+
+    async function pickFolder(): Promise<FileSystemDirectoryHandle | null> {
+      try {
+        return await (window as any).showDirectoryPicker({ mode: 'readwrite' });
+      } catch (e: any) {
+        if (e.name === 'AbortError') return null;
+        setStatus(`Permission error: ${e.message}`);
+        return null;
+      }
+    }
+
+    /** Update the shared folder handle and sync both path displays + buttons. */
+    function setSharedFolder(handle: FileSystemDirectoryHandle) {
+      folderHandle = handle;
+      // Sync path displays
+      setPathDisplay(delPath, handle.name);
+      setPathDisplay(countPath, handle.name);
+      // Enable action buttons
+      delScan.disabled = false;
+      countRun.disabled = false;
+      // Reset stale scan results (folder changed)
+      delRun.disabled = true;
+      emptyFolders = [];
+      clearResults(delResults);
+      clearResults(countResults);
+    }
+
+    // ----------------------------------------------------------------
+    // Modal
+    // ----------------------------------------------------------------
+    let modalResolve: ((v: boolean) => void) | null = null;
+
+    function showModal(title: string, bodyHtml: string, confirmLabel: string = 'Confirm'): Promise<boolean> {
+      modalTitle.textContent = title;
+      modalBody.innerHTML = bodyHtml;
+      modalConfirm.textContent = confirmLabel;
+      modalOverlay.style.display = '';
+      return new Promise(resolve => { modalResolve = resolve; });
+    }
+
+    function closeModal(result: boolean) {
+      modalOverlay.style.display = 'none';
+      if (modalResolve) { modalResolve(result); modalResolve = null; }
+    }
+
+    modalCancel.addEventListener('click', () => closeModal(false));
+    modalConfirm.addEventListener('click', () => closeModal(true));
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal(false);
+    });
+
+    // ----------------------------------------------------------------
+    // Tab switching
+    // ----------------------------------------------------------------
+    tabsEl.addEventListener('click', (e) => {
+      const tab = (e.target as HTMLElement).closest('.fm-tab') as HTMLElement | null;
+      if (!tab) return;
+      const id = tab.dataset.tab as string;
+      tabsEl.querySelectorAll('.fm-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      Object.entries(panels).forEach(([key, panel]) => {
+        panel.style.display = key === id ? '' : 'none';
+      });
+      setStatus('');
+    });
+
+    // ================================================================
+    // FILESYSTEM FUNCTIONS
+    // ================================================================
+
+    /**
+     * Recursively scan for empty folders.
+     * A folder is "empty" if it contains no files in its entire subtree.
+     */
+    async function scanEmptyFolders(
+      dirHandle: FileSystemDirectoryHandle,
+      prefix: string = ''
+    ): Promise<{ empties: string[]; hasFiles: boolean }> {
+      let hasFiles = false;
+      let empties: string[] = [];
+
+      for await (const [name, handle] of (dirHandle as any).entries()) {
+        if (handle.kind === 'file') {
+          hasFiles = true;
+        } else if (handle.kind === 'directory') {
+          const sub = await scanEmptyFolders(handle, prefix ? `${prefix}/${name}` : name);
+          empties = empties.concat(sub.empties);
+          if (sub.hasFiles) hasFiles = true;
+        }
+      }
+
+      // If this folder (at prefix level) has no files in subtree, it's empty
+      if (!hasFiles && prefix !== '') {
+        // Remove any child empties — we only need the topmost empty ancestor
+        empties = empties.filter(e => !e.startsWith(prefix + '/'));
+        empties.push(prefix);
+      }
+
+      return { empties, hasFiles };
+    }
+
+    /**
+     * Delete folders by path, deepest first.
+     */
+    async function deleteFolders(
+      rootHandle: FileSystemDirectoryHandle,
+      paths: string[]
+    ): Promise<{ deleted: string[]; errors: string[] }> {
+      // Sort deepest first
+      const sorted = [...paths].sort((a, b) => b.split('/').length - a.split('/').length);
+      const deleted: string[] = [];
+      const errors: string[] = [];
+
+      for (const path of sorted) {
+        try {
+          const segments = path.split('/');
+          let parent = rootHandle;
+          // Navigate to the parent of the target
+          for (let i = 0; i < segments.length - 1; i++) {
+            parent = await parent.getDirectoryHandle(segments[i]);
+          }
+          const target = segments[segments.length - 1];
+          await parent.removeEntry(target, { recursive: true });
+          deleted.push(path);
+        } catch (e: any) {
+          errors.push(`${path}: ${e.message}`);
+        }
+      }
+
+      return { deleted, errors };
+    }
+
+    /**
+     * Collect all subdirectory relative paths from a directory.
+     */
+    async function scanFolderStructure(
+      dirHandle: FileSystemDirectoryHandle,
+      prefix: string = ''
+    ): Promise<string[]> {
+      let folders: string[] = [];
+
+      for await (const [name, handle] of (dirHandle as any).entries()) {
+        if (handle.kind === 'directory') {
+          const path = prefix ? `${prefix}/${name}` : name;
+          folders.push(path);
+          const sub = await scanFolderStructure(handle, path);
+          folders = folders.concat(sub);
+        }
+      }
+
+      return folders;
+    }
+
+    /**
+     * Create folder structure in destination.
+     */
+    async function createFolderStructure(
+      destHandle: FileSystemDirectoryHandle,
+      folders: string[]
+    ): Promise<{ created: string[]; errors: string[] }> {
+      const created: string[] = [];
+      const errors: string[] = [];
+
+      for (const path of folders) {
+        try {
+          const segments = path.split('/');
+          let current = destHandle;
+          for (const seg of segments) {
+            current = await current.getDirectoryHandle(seg, { create: true });
+          }
+          created.push(path);
+        } catch (e: any) {
+          errors.push(`${path}: ${e.message}`);
+        }
+      }
+
+      return { created, errors };
+    }
+
+    /**
+     * Count files at root level and total (all levels).
+     */
+    async function countFiles(
+      dirHandle: FileSystemDirectoryHandle
+    ): Promise<{ root: number; total: number; folders: number }> {
+      let root = 0;
+      let total = 0;
+      let folders = 0;
+
+      for await (const [, handle] of (dirHandle as any).entries()) {
+        if (handle.kind === 'file') {
+          root++;
+          total++;
+        } else {
+          folders++;
+          total += await countNestedFiles(handle);
+        }
+      }
+
+      return { root, total, folders };
+    }
+
+    async function countNestedFiles(dirHandle: FileSystemDirectoryHandle): Promise<number> {
+      let count = 0;
+      for await (const [, handle] of (dirHandle as any).entries()) {
+        if (handle.kind === 'file') count++;
+        else count += await countNestedFiles(handle);
+      }
+      return count;
+    }
+
+    // ================================================================
+    // DELETE EMPTY FOLDERS TAB
+    // ================================================================
+    delBrowse.addEventListener('click', async () => {
+      const handle = await pickFolder();
+      if (!handle) return;
+      setSharedFolder(handle);
+      setStatus('');
+    });
+
+    delScan.addEventListener('click', async () => {
+      if (!folderHandle) return;
+      delScan.disabled = true;
+      delScan.textContent = 'Scanning...';
+      setStatus('Scanning for empty folders...');
+      clearResults(delResults);
+
+      try {
+        const { empties } = await scanEmptyFolders(folderHandle);
+        emptyFolders = empties.sort();
+
+        if (emptyFolders.length === 0) {
+          showResults(delResults, line('No empty folders found.', 'fm-line-ok'));
+          setStatus('Scan complete — no empty folders.');
+        } else {
+          let html = line(`Found ${emptyFolders.length} empty folder${emptyFolders.length > 1 ? 's' : ''}:\n`);
+          html += emptyFolders.map(f => line(`  ${f}`)).join('');
+          showResults(delResults, html);
+          delRun.disabled = false;
+          setStatus(`Found ${emptyFolders.length} empty folder(s). Review and click Delete.`);
+        }
+      } catch (e: any) {
+        showResults(delResults, line(`Error: ${e.message}`, 'fm-line-err'));
+        setStatus('Scan failed.');
+      }
+
+      delScan.textContent = 'Scan for Empty Folders';
+      delScan.disabled = false;
+    });
+
+    delRun.addEventListener('click', async () => {
+      if (!folderHandle || emptyFolders.length === 0) return;
+
+      const confirmed = await showModal(
+        'Delete Empty Folders',
+        `<p>This will permanently delete <strong>${emptyFolders.length}</strong> empty folder${emptyFolders.length > 1 ? 's' : ''} inside <strong>${escHtml(folderHandle.name)}</strong>.</p>
+         <pre>${emptyFolders.map(f => escHtml(f)).join('\n')}</pre>
+         <p>This cannot be undone.</p>`,
+        'Delete'
+      );
+      if (!confirmed) return;
+
+      delRun.disabled = true;
+      setStatus('Deleting empty folders...');
+
+      const { deleted, errors } = await deleteFolders(folderHandle, emptyFolders);
+
+      let html = '';
+      deleted.forEach(p => { html += line(`Deleted: ${p}`, 'fm-line-ok'); });
+      errors.forEach(p => { html += line(`Error: ${p}`, 'fm-line-err'); });
+      html += line(`\nDone. ${deleted.length} deleted, ${errors.length} error(s).`);
+      showResults(delResults, html);
+
+      emptyFolders = [];
+      setStatus(`Deleted ${deleted.length} folder(s).`);
+    });
+
+    // ================================================================
+    // DUPLICATE STRUCTURE TAB
+    // ================================================================
+    dupBrowseSrc.addEventListener('click', async () => {
+      const handle = await pickFolder();
+      if (!handle) return;
+      dupSrcHandle = handle;
+      setPathDisplay(dupSrcPath, handle.name);
+      dupPreview.disabled = false;
+      dupRun.disabled = true;
+      dupFolders = [];
+      clearResults(dupResults);
+      setStatus('');
+    });
+
+    dupBrowseDest.addEventListener('click', async () => {
+      const handle = await pickFolder();
+      if (!handle) return;
+      dupDestHandle = handle;
+      setPathDisplay(dupDestPath, handle.name);
+      setStatus('');
+    });
+
+    dupPreview.addEventListener('click', async () => {
+      if (!dupSrcHandle) return;
+      dupPreview.disabled = true;
+      dupPreview.textContent = 'Scanning...';
+      setStatus('Scanning folder structure...');
+      clearResults(dupResults);
+
+      try {
+        dupFolders = await scanFolderStructure(dupSrcHandle);
+
+        if (dupFolders.length === 0) {
+          showResults(dupResults, line('No subfolders found in source.', 'fm-line-info'));
+          setStatus('No subfolders to duplicate.');
+        } else {
+          let html = line(`Structure of "${dupSrcHandle.name}" (${dupFolders.length} folder${dupFolders.length > 1 ? 's' : ''}):\n`);
+          dupFolders.forEach(f => {
+            const depth = f.split('/').length;
+            const indent = '  '.repeat(depth);
+            const name = f.split('/').pop();
+            html += line(`${indent}${name}/`);
+          });
+          showResults(dupResults, html);
+          dupRun.disabled = !dupDestHandle;
+          setStatus(`${dupFolders.length} folder(s) found. Select a destination and click Create.`);
+        }
+      } catch (e: any) {
+        showResults(dupResults, line(`Error: ${e.message}`, 'fm-line-err'));
+        setStatus('Preview failed.');
+      }
+
+      dupPreview.textContent = 'Preview Structure';
+      dupPreview.disabled = false;
+    });
+
+    dupRun.addEventListener('click', async () => {
+      if (!dupSrcHandle || !dupDestHandle || dupFolders.length === 0) return;
+
+      const confirmed = await showModal(
+        'Duplicate Folder Structure',
+        `<p>This will create <strong>${dupFolders.length}</strong> folder${dupFolders.length > 1 ? 's' : ''} inside <strong>${escHtml(dupDestHandle.name)}</strong>, mirroring the structure of <strong>${escHtml(dupSrcHandle.name)}</strong>.</p>
+         <p>No files will be copied — only empty folders.</p>`,
+        'Create'
+      );
+      if (!confirmed) return;
+
+      dupRun.disabled = true;
+      setStatus('Creating folder structure...');
+
+      const { created, errors } = await createFolderStructure(dupDestHandle, dupFolders);
+
+      let html = '';
+      created.forEach(p => { html += line(`Created: ${p}`, 'fm-line-ok'); });
+      errors.forEach(p => { html += line(`Error: ${p}`, 'fm-line-err'); });
+      html += line(`\nDone. ${created.length} created, ${errors.length} error(s).`);
+      showResults(dupResults, html);
+
+      setStatus(`Created ${created.length} folder(s).`);
+    });
+
+    // ================================================================
+    // COUNT FILES TAB
+    // ================================================================
+    countBrowse.addEventListener('click', async () => {
+      const handle = await pickFolder();
+      if (!handle) return;
+      setSharedFolder(handle);
+      setStatus('');
+    });
+
+    countRun.addEventListener('click', async () => {
+      if (!folderHandle) return;
+      countRun.disabled = true;
+      countRun.textContent = 'Counting...';
+      setStatus('Counting files...');
+
+      try {
+        const { root, total, folders } = await countFiles(folderHandle);
+        const nested = total - root;
+        let html = line(`Folder: ${folderHandle.name}`);
+        html += line(`Files at root level: ${root}`);
+        html += line(`Files in subfolders: ${nested}`);
+        html += line(`Total files: ${total}`);
+        html += line(`Subfolders: ${folders}`);
+        showResults(countResults, html);
+        setStatus('Count complete.');
+      } catch (e: any) {
+        showResults(countResults, line(`Error: ${e.message}`, 'fm-line-err'));
+        setStatus('Count failed.');
+      }
+
+      countRun.textContent = 'Count Files';
+      countRun.disabled = false;
+    });
+  })();
+</script>

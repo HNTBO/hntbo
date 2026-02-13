@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import FolderManager from '../../../components/FolderManager.astro';
+---
+
+<BaseLayout
+  title="Folder Manager - Live Demo"
+  description="Browser-based folder management: delete empty folders, duplicate structures, count files."
+>
+  <section class="pt-32 pb-16 md:pt-40 md:pb-24">
+    <div class="container">
+      <a
+        href="/tools/folder-manager"
+        class="inline-flex items-center text-text-secondary hover:text-accent transition-colors mb-8"
+      >
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Folder Manager
+      </a>
+
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
+        Folder Manager
+      </h1>
+      <p class="text-text-secondary text-lg max-w-2xl mb-8">
+        Manage your folders directly in the browser — delete empties, duplicate structures, count files.
+      </p>
+
+      <FolderManager />
+
+      <div class="mt-12 p-6 bg-surface rounded-lg border border-border">
+        <h3 class="text-xl font-semibold text-text-primary mb-4">How to Use</h3>
+        <div class="prose">
+          <h4>Delete Empty Folders</h4>
+          <ol>
+            <li>Click <strong>Browse Folder</strong> and select a folder to clean up</li>
+            <li>Click <strong>Scan for Empty Folders</strong> to preview what will be removed</li>
+            <li>Review the list, then click <strong>Delete All Empty</strong> to confirm</li>
+          </ol>
+
+          <h4>Duplicate Structure</h4>
+          <ol>
+            <li>Select a <strong>Source Folder</strong> whose structure you want to copy</li>
+            <li>Select a <strong>Destination Folder</strong> where the structure will be created</li>
+            <li>Click <strong>Preview Structure</strong> to see the folder tree</li>
+            <li>Click <strong>Create Structure</strong> to create the empty folders</li>
+          </ol>
+
+          <h4>Count Files</h4>
+          <ol>
+            <li>Click <strong>Browse Folder</strong> and select any folder</li>
+            <li>Click <strong>Count Files</strong> to see how many files are at root level vs. nested in subfolders</li>
+          </ol>
+
+          <h4>Browser Requirements</h4>
+          <p>
+            This tool uses the <strong>File System Access API</strong>, which is only available in
+            Chromium-based browsers (Chrome, Edge, Brave, Opera). Firefox and Safari are not supported — use the
+            <a href="https://github.com/HNTBO/folder-manager/releases">desktop version</a> instead.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
