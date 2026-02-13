@@ -1,10 +1,11 @@
 ---
 import AnimatedLogo from './AnimatedLogo.astro';
+import { toolsUrl } from '../utils/toolsUrl';
 
 const navLinks = [
   { href: '/', label: 'Home', key: 'home' },
   { href: '/tutos', label: 'Tutos', key: 'tutos' },
-  { href: '/tools', label: 'Tools', key: 'tools' },
+  { href: toolsUrl('/tools'), label: 'Tools', key: 'tools' },
   { href: '/howiai', label: 'HowIAI', key: 'howiai' },
   { href: '/contact', label: 'Contact', key: 'contact' },
 ];
@@ -17,6 +18,9 @@ const currentPath = Astro.url.pathname;
 const isActive = (href: string, key: string) => {
   if (key === 'home') {
     return currentPath === '/' || currentPath === '';
+  }
+  if (key === 'tools') {
+    return currentPath.startsWith('/tools');
   }
   return currentPath.startsWith(href);
 };

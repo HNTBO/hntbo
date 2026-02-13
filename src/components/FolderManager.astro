@@ -486,9 +486,9 @@
       }
     }
 
-    async function pickFolder(): Promise<FileSystemDirectoryHandle | null> {
+    async function pickFolder(mode: FileSystemPermissionMode = 'read'): Promise<FileSystemDirectoryHandle | null> {
       try {
-        return await (window as any).showDirectoryPicker({ mode: 'readwrite' });
+        return await (window as any).showDirectoryPicker({ mode });
       } catch (e: any) {
         if (e.name === 'AbortError') return null;
         setStatus(`Permission error: ${e.message}`);
@@ -700,7 +700,7 @@
     // DELETE EMPTY FOLDERS TAB
     // ================================================================
     delBrowse.addEventListener('click', async () => {
-      const handle = await pickFolder();
+      const handle = await pickFolder('readwrite');
       if (!handle) return;
       setSharedFolder(handle);
       setStatus('');
@@ -767,7 +767,7 @@
     // DUPLICATE STRUCTURE TAB
     // ================================================================
     dupBrowseSrc.addEventListener('click', async () => {
-      const handle = await pickFolder();
+      const handle = await pickFolder('read');
       if (!handle) return;
       dupSrcHandle = handle;
       setPathDisplay(dupSrcPath, handle.name);
@@ -779,7 +779,7 @@
     });
 
     dupBrowseDest.addEventListener('click', async () => {
-      const handle = await pickFolder();
+      const handle = await pickFolder('readwrite');
       if (!handle) return;
       dupDestHandle = handle;
       setPathDisplay(dupDestPath, handle.name);
@@ -849,7 +849,7 @@
     // COUNT FILES TAB
     // ================================================================
     countBrowse.addEventListener('click', async () => {
-      const handle = await pickFolder();
+      const handle = await pickFolder('read');
       if (!handle) return;
       setSharedFolder(handle);
       setStatus('');
