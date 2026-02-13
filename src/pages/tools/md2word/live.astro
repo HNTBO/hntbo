@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import MD2Word from '../../../components/MD2Word.astro';
+---
+
+<BaseLayout
+  title="MD2Word - Live Demo"
+  description="Convert Markdown to Word documents directly in the browser. No upload, no install."
+>
+  <section class="pt-32 pb-16 md:pt-40 md:pb-24">
+    <div class="container">
+      <a
+        href="/tools/md2word"
+        class="inline-flex items-center text-text-secondary hover:text-accent transition-colors mb-8"
+      >
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to MD2Word
+      </a>
+
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
+        MD2Word
+      </h1>
+      <p class="text-text-secondary text-lg max-w-2xl mb-8">
+        Convert Markdown to Word documents directly in the browser — no upload, no install, everything stays on your machine.
+      </p>
+
+      <MD2Word />
+
+      <div class="mt-12 p-6 bg-surface rounded-lg border border-border">
+        <h3 class="text-xl font-semibold text-text-primary mb-4">How to Use</h3>
+        <div class="prose">
+          <h4>Convert Text</h4>
+          <ol>
+            <li>Paste or type your Markdown in the text area</li>
+            <li>Set a filename (defaults to "document")</li>
+            <li>Click <strong>Convert to Word</strong> — the .docx file downloads automatically</li>
+          </ol>
+
+          <h4>Convert Files</h4>
+          <ol>
+            <li>Drop <code>.md</code> files onto the drop zone, or click to browse</li>
+            <li>Review the file list — remove any you don't want</li>
+            <li>Click <strong>Convert All</strong> — each file downloads as a separate .docx</li>
+          </ol>
+
+          <h4>Supported Markdown</h4>
+          <p>
+            Headings, <strong>bold</strong>, <em>italic</em>, <strong><em>bold+italic</em></strong>,
+            <code>inline code</code>, code blocks, unordered and ordered lists, blockquotes,
+            horizontal rules, links, and tables.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

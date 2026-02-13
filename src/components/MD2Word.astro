@@ -1,0 +1,1029 @@
+---
+// MD2Word component — browser-based Markdown to Word converter
+// Uses docx npm package for client-side DOCX generation
+// Pattern: self-contained component with mw- CSS prefix, IIFE script
+---
+
+<!-- Main UI -->
+<div id="mw-app" class="mw-container">
+  <!-- Tabs -->
+  <div class="mw-card">
+    <div class="mw-tabs" id="mw-tabs">
+      <button class="mw-tab active" data-tab="text">Convert Text</button>
+      <button class="mw-tab" data-tab="files">Convert Files</button>
+    </div>
+  </div>
+
+  <!-- Tab: Convert Text -->
+  <div class="mw-panel" id="mw-panel-text">
+    <div class="mw-card">
+      <p class="mw-hint">Paste or type Markdown below, then convert it to a Word document.</p>
+      <textarea
+        id="mw-textarea"
+        class="mw-textarea"
+        placeholder="# My Document&#10;&#10;Write your **Markdown** here...&#10;&#10;- Item one&#10;- Item two&#10;- Item three"
+        spellcheck="false"
+      ></textarea>
+      <div class="mw-row">
+        <label class="mw-label" for="mw-filename">Filename</label>
+        <input
+          id="mw-filename"
+          class="mw-input"
+          type="text"
+          value="document"
+          placeholder="document"
+        />
+        <span class="mw-ext">.docx</span>
+      </div>
+      <div class="mw-actions">
+        <button class="mw-btn mw-btn-primary" id="mw-convert-text" disabled>Convert to Word</button>
+      </div>
+      <div class="mw-results" id="mw-text-results"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Convert Files -->
+  <div class="mw-panel" id="mw-panel-files" style="display:none">
+    <div class="mw-card">
+      <p class="mw-hint">Select one or more <code>.md</code> files to convert them all to Word documents.</p>
+      <div class="mw-drop-zone" id="mw-drop-zone">
+        <svg class="mw-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+        <p class="mw-drop-text">Drop .md files here or click to browse</p>
+        <input id="mw-file-input" type="file" accept=".md,.markdown,.txt" multiple hidden />
+      </div>
+      <div class="mw-file-list" id="mw-file-list"></div>
+      <div class="mw-actions">
+        <button class="mw-btn mw-btn-primary" id="mw-convert-files" disabled>Convert All</button>
+        <button class="mw-btn" id="mw-clear-files" style="display:none">Clear Files</button>
+      </div>
+      <div class="mw-results" id="mw-files-results"></div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="mw-status" id="mw-status"></div>
+</div>
+
+<style>
+  /* ------------------------------------------------------------------ */
+  /* Design tokens — mirrors HNTBO site theme                           */
+  /* ------------------------------------------------------------------ */
+  .mw-container {
+    --mw-bg: #0a0b10;
+    --mw-surface: #12141a;
+    --mw-border: #252833;
+    --mw-ink: #f5f5f7;
+    --mw-ink2: #8e8e93;
+    --mw-accent: #ff2f72;
+    --mw-accent-hover: #ff5a8f;
+    --mw-success: #34c759;
+    --mw-danger: #ff4444;
+    --mw-radius: 14px;
+    --mw-gap: 12px;
+  }
+
+  .mw-container { display: grid; gap: var(--mw-gap); }
+
+  /* Card */
+  .mw-card {
+    background: var(--mw-surface);
+    border: 1px solid var(--mw-border);
+    border-radius: var(--mw-radius);
+    padding: 20px;
+  }
+
+  .mw-hint {
+    color: var(--mw-ink2);
+    font-size: 14px;
+    margin: 0 0 16px;
+    line-height: 1.5;
+  }
+
+  .mw-hint code {
+    background: var(--mw-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--mw-accent);
+  }
+
+  /* Tabs */
+  .mw-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mw-tab {
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--mw-border);
+    background: var(--mw-bg);
+    color: var(--mw-ink2);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+  }
+
+  .mw-tab:hover {
+    border-color: var(--mw-accent);
+    color: var(--mw-ink);
+  }
+
+  .mw-tab.active {
+    background: rgba(255, 47, 114, 0.15);
+    border-color: var(--mw-accent);
+    color: var(--mw-accent);
+  }
+
+  /* Textarea */
+  .mw-textarea {
+    width: 100%;
+    min-height: 260px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--mw-border);
+    background: var(--mw-bg);
+    color: var(--mw-ink);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    margin-bottom: var(--mw-gap);
+    transition: border-color 0.2s ease;
+  }
+
+  .mw-textarea:focus {
+    outline: none;
+    border-color: var(--mw-accent);
+  }
+
+  .mw-textarea::placeholder {
+    color: var(--mw-ink2);
+    opacity: 0.5;
+  }
+
+  /* Filename row */
+  .mw-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: var(--mw-gap);
+  }
+
+  .mw-label {
+    color: var(--mw-ink2);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .mw-input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--mw-border);
+    background: var(--mw-bg);
+    color: var(--mw-ink);
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+  }
+
+  .mw-input:focus {
+    outline: none;
+    border-color: var(--mw-accent);
+  }
+
+  .mw-ext {
+    color: var(--mw-ink2);
+    font-size: 14px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /* Buttons */
+  .mw-btn {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--mw-border);
+    background: var(--mw-bg);
+    color: var(--mw-ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .mw-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .mw-btn:hover:not(:disabled) {
+    border-color: var(--mw-ink2);
+  }
+
+  .mw-btn-primary {
+    border-color: var(--mw-accent);
+    color: var(--mw-accent);
+  }
+
+  .mw-btn-primary:hover:not(:disabled) {
+    background: var(--mw-accent);
+    color: var(--mw-bg);
+  }
+
+  /* Action buttons row */
+  .mw-actions {
+    display: flex;
+    gap: var(--mw-gap);
+    flex-wrap: wrap;
+    margin-bottom: var(--mw-gap);
+  }
+
+  /* Results area */
+  .mw-results {
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--mw-border);
+    background: var(--mw-bg);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--mw-ink2);
+    white-space: pre-wrap;
+    display: none;
+  }
+
+  .mw-results.mw-visible { display: block; }
+
+  .mw-results .mw-line-ok { color: var(--mw-success); }
+  .mw-results .mw-line-err { color: var(--mw-danger); }
+  .mw-results .mw-line-info { color: var(--mw-ink2); }
+
+  .mw-results .mw-download-link {
+    color: var(--mw-accent);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .mw-results .mw-download-link:hover {
+    color: var(--mw-accent-hover);
+  }
+
+  /* Drop zone */
+  .mw-drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    border: 2px dashed var(--mw-border);
+    border-radius: 10px;
+    background: var(--mw-bg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: var(--mw-gap);
+  }
+
+  .mw-drop-zone:hover,
+  .mw-drop-zone.mw-drag-over {
+    border-color: var(--mw-accent);
+    background: rgba(255, 47, 114, 0.05);
+  }
+
+  .mw-drop-icon {
+    width: 40px;
+    height: 40px;
+    color: var(--mw-ink2);
+    margin-bottom: 8px;
+  }
+
+  .mw-drop-text {
+    color: var(--mw-ink2);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  /* File list */
+  .mw-file-list {
+    display: none;
+    gap: 6px;
+    margin-bottom: var(--mw-gap);
+  }
+
+  .mw-file-list.mw-visible {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mw-file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--mw-bg);
+    border: 1px solid var(--mw-border);
+    font-size: 13px;
+    color: var(--mw-ink);
+  }
+
+  .mw-file-item svg {
+    width: 16px;
+    height: 16px;
+    color: var(--mw-ink2);
+    flex-shrink: 0;
+  }
+
+  .mw-file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mw-file-size {
+    color: var(--mw-ink2);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .mw-file-remove {
+    background: none;
+    border: none;
+    color: var(--mw-ink2);
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    transition: color 0.2s ease;
+  }
+
+  .mw-file-remove:hover {
+    color: var(--mw-danger);
+  }
+
+  /* Status bar */
+  .mw-status {
+    font-size: 13px;
+    color: var(--mw-ink2);
+    min-height: 1.4em;
+    padding: 0 4px;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Responsive                                                          */
+  /* ------------------------------------------------------------------ */
+  @media (max-width: 640px) {
+    .mw-tab {
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+
+    .mw-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .mw-actions {
+      flex-direction: column;
+    }
+
+    .mw-actions .mw-btn {
+      width: 100%;
+      text-align: center;
+    }
+
+    .mw-textarea {
+      min-height: 200px;
+    }
+  }
+</style>
+
+<script>
+  import {
+    Document,
+    Packer,
+    Paragraph,
+    TextRun,
+    HeadingLevel,
+    AlignmentType,
+    BorderStyle,
+    Table,
+    TableRow,
+    TableCell,
+    WidthType,
+  } from 'docx';
+
+  (function () {
+    // ----------------------------------------------------------------
+    // DOM refs
+    // ----------------------------------------------------------------
+    const tabsEl = document.getElementById('mw-tabs') as HTMLDivElement;
+    const panelText = document.getElementById('mw-panel-text') as HTMLDivElement;
+    const panelFiles = document.getElementById('mw-panel-files') as HTMLDivElement;
+    const statusEl = document.getElementById('mw-status') as HTMLDivElement;
+
+    // Convert Text tab
+    const textarea = document.getElementById('mw-textarea') as HTMLTextAreaElement;
+    const filenameInput = document.getElementById('mw-filename') as HTMLInputElement;
+    const convertTextBtn = document.getElementById('mw-convert-text') as HTMLButtonElement;
+    const textResults = document.getElementById('mw-text-results') as HTMLDivElement;
+
+    // Convert Files tab
+    const dropZone = document.getElementById('mw-drop-zone') as HTMLDivElement;
+    const fileInput = document.getElementById('mw-file-input') as HTMLInputElement;
+    const fileListEl = document.getElementById('mw-file-list') as HTMLDivElement;
+    const convertFilesBtn = document.getElementById('mw-convert-files') as HTMLButtonElement;
+    const clearFilesBtn = document.getElementById('mw-clear-files') as HTMLButtonElement;
+    const filesResults = document.getElementById('mw-files-results') as HTMLDivElement;
+
+    // ----------------------------------------------------------------
+    // State
+    // ----------------------------------------------------------------
+    let selectedFiles: File[] = [];
+
+    // ----------------------------------------------------------------
+    // Helpers
+    // ----------------------------------------------------------------
+    function setStatus(text: string) { statusEl.textContent = text; }
+
+    function showResults(el: HTMLDivElement, html: string) {
+      el.innerHTML = html;
+      el.classList.add('mw-visible');
+    }
+
+    function clearResults(el: HTMLDivElement) {
+      el.innerHTML = '';
+      el.classList.remove('mw-visible');
+    }
+
+    function line(text: string, cls: string = 'mw-line-info') {
+      return `<div class="${cls}">${escHtml(text)}</div>`;
+    }
+
+    function escHtml(s: string) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function formatSize(bytes: number): string {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // ----------------------------------------------------------------
+    // Tab switching
+    // ----------------------------------------------------------------
+    const panels: Record<string, HTMLDivElement> = { text: panelText, files: panelFiles };
+
+    tabsEl.addEventListener('click', (e) => {
+      const tab = (e.target as HTMLElement).closest('.mw-tab') as HTMLElement | null;
+      if (!tab) return;
+      const id = tab.dataset.tab as string;
+      tabsEl.querySelectorAll('.mw-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      Object.entries(panels).forEach(([key, panel]) => {
+        panel.style.display = key === id ? '' : 'none';
+      });
+      setStatus('');
+    });
+
+    // ----------------------------------------------------------------
+    // Enable/disable convert button when textarea changes
+    // ----------------------------------------------------------------
+    textarea.addEventListener('input', () => {
+      convertTextBtn.disabled = textarea.value.trim().length === 0;
+    });
+
+    // ================================================================
+    // MARKDOWN PARSER (port of Python converter.py)
+    // ================================================================
+
+    type BlockType = 'heading' | 'paragraph' | 'code_block' | 'unordered_list' | 'ordered_list' | 'blockquote' | 'hr' | 'table';
+
+    interface Block {
+      type: BlockType;
+      level?: number;       // heading level
+      text?: string;        // paragraph, blockquote, code_block
+      language?: string;    // code_block
+      items?: string[];     // list items
+      rows?: string[][];    // table rows (first row = header)
+    }
+
+    function isSpecialLine(line: string): boolean {
+      if (/^#[a-zA-Z]/.test(line)) return true;
+      if (/^#+\s/.test(line)) return true;
+      if (line.startsWith('```')) return true;
+      if (/^[\*\-\+]\s/.test(line)) return true;
+      if (/^\d+\.\s/.test(line)) return true;
+      if (line.startsWith('>')) return true;
+      if (/^[\-\*_]{3,}\s*$/.test(line)) return true;
+      if (line.includes('|')) return true;
+      return false;
+    }
+
+    function parseMarkdown(content: string): Block[] {
+      const lines = content.split('\n');
+      const blocks: Block[] = [];
+      let i = 0;
+
+      while (i < lines.length) {
+        const ln = lines[i];
+
+        // Skip empty lines
+        if (!ln.trim()) { i++; continue; }
+
+        // Skip tags (#word without space)
+        if (/^#[a-zA-Z]/.test(ln)) { i++; continue; }
+
+        // Headings
+        const headMatch = ln.match(/^(#+)\s/);
+        if (headMatch) {
+          const level = Math.min(headMatch[1].length, 6);
+          const text = ln.replace(/^#+\s*/, '');
+          blocks.push({ type: 'heading', level, text });
+          i++;
+          continue;
+        }
+
+        // Code blocks (fenced)
+        if (ln.startsWith('```')) {
+          const language = ln.slice(3).trim();
+          const codeLines: string[] = [];
+          i++;
+          while (i < lines.length && !lines[i].startsWith('```')) {
+            codeLines.push(lines[i]);
+            i++;
+          }
+          blocks.push({ type: 'code_block', text: codeLines.join('\n'), language });
+          i++; // skip closing ```
+          continue;
+        }
+
+        // Unordered lists
+        if (/^[\*\-\+]\s/.test(ln)) {
+          const items: string[] = [];
+          while (i < lines.length && /^[\*\-\+]\s/.test(lines[i])) {
+            items.push(lines[i].replace(/^[\*\-\+]\s/, ''));
+            i++;
+          }
+          blocks.push({ type: 'unordered_list', items });
+          continue;
+        }
+
+        // Ordered lists
+        if (/^\d+\.\s/.test(ln)) {
+          const items: string[] = [];
+          while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+            items.push(lines[i].replace(/^\d+\.\s/, ''));
+            i++;
+          }
+          blocks.push({ type: 'ordered_list', items });
+          continue;
+        }
+
+        // Blockquotes
+        if (ln.startsWith('>')) {
+          const quoteLines: string[] = [];
+          while (i < lines.length && lines[i].startsWith('>')) {
+            quoteLines.push(lines[i].replace(/^>\s?/, ''));
+            i++;
+          }
+          blocks.push({ type: 'blockquote', text: quoteLines.join('\n') });
+          continue;
+        }
+
+        // Horizontal rule
+        if (/^[\-\*_]{3,}\s*$/.test(ln)) {
+          blocks.push({ type: 'hr' });
+          i++;
+          continue;
+        }
+
+        // Tables
+        if (ln.includes('|')) {
+          const tableLines: string[] = [];
+          while (i < lines.length && lines[i].includes('|')) {
+            tableLines.push(lines[i]);
+            i++;
+          }
+          const rows = parseTableLines(tableLines);
+          if (rows.length > 0) {
+            blocks.push({ type: 'table', rows });
+          }
+          continue;
+        }
+
+        // Regular paragraph — collect consecutive non-special lines
+        const paraLines = [ln];
+        i++;
+        while (i < lines.length && lines[i].trim() && !isSpecialLine(lines[i])) {
+          paraLines.push(lines[i]);
+          i++;
+        }
+        blocks.push({ type: 'paragraph', text: paraLines.join(' ') });
+      }
+
+      return blocks;
+    }
+
+    function parseTableLines(tableLines: string[]): string[][] {
+      const rows: string[][] = [];
+
+      for (const raw of tableLines) {
+        let line = raw.trim();
+        if (line.startsWith('|')) line = line.slice(1);
+        if (line.endsWith('|')) line = line.slice(0, -1);
+
+        // Skip separator rows (only dashes, pipes, spaces, colons)
+        if (/^[\s\-:|]+$/.test(line)) continue;
+
+        const cells = line.split('|').map(c => c.trim());
+        if (cells.length > 0) rows.push(cells);
+      }
+
+      return rows;
+    }
+
+    // ================================================================
+    // INLINE FORMATTING (port of _add_formatted_text)
+    // ================================================================
+
+    interface RunConfig {
+      text: string;
+      bold?: boolean;
+      italic?: boolean;
+      code?: boolean;
+      underline?: boolean;
+    }
+
+    function formatInline(text: string): RunConfig[] {
+      const runs: RunConfig[] = [];
+
+      // Combined regex — order matters: bold_italic > bold > italic > code > link
+      const pattern = /(\*\*\*(.+?)\*\*\*)|(\*\*(.+?)\*\*)|(__(.+?)__)|(\*(.+?)\*)|(_(.+?)_)|(`(.+?)`)|(\[(.+?)\]\((.+?)\))/g;
+
+      let pos = 0;
+      let match: RegExpExecArray | null;
+
+      while ((match = pattern.exec(text)) !== null) {
+        // Add plain text before match
+        if (match.index > pos) {
+          runs.push({ text: text.slice(pos, match.index) });
+        }
+
+        const full = match[0];
+
+        if (full.startsWith('***')) {
+          // bold + italic
+          runs.push({ text: match[2], bold: true, italic: true });
+        } else if (full.startsWith('**')) {
+          // bold
+          runs.push({ text: match[4], bold: true });
+        } else if (full.startsWith('__')) {
+          // bold (underscore)
+          runs.push({ text: match[6], bold: true });
+        } else if (full.startsWith('*')) {
+          // italic
+          runs.push({ text: match[8], italic: true });
+        } else if (full.startsWith('_')) {
+          // italic (underscore)
+          runs.push({ text: match[10], italic: true });
+        } else if (full.startsWith('`')) {
+          // inline code
+          runs.push({ text: match[12], code: true });
+        } else if (full.startsWith('[')) {
+          // link — render as underlined text
+          runs.push({ text: match[14], underline: true });
+        }
+
+        pos = match.index + full.length;
+      }
+
+      // Remaining text
+      if (pos < text.length) {
+        runs.push({ text: text.slice(pos) });
+      }
+
+      return runs;
+    }
+
+    function makeTextRuns(text: string, extraBold?: boolean): TextRun[] {
+      const configs = formatInline(text);
+      return configs.map(c => {
+        const opts: any = { text: c.text };
+        if (c.bold || extraBold) opts.bold = true;
+        if (c.italic) opts.italics = true;
+        if (c.underline) opts.underline = {};
+        if (c.code) {
+          opts.font = 'Consolas';
+          opts.size = 20; // 10pt in half-points
+        }
+        return new TextRun(opts);
+      });
+    }
+
+    // ================================================================
+    // DOCUMENT BUILDER
+    // ================================================================
+
+    const headingLevelMap: Record<number, typeof HeadingLevel[keyof typeof HeadingLevel]> = {
+      1: HeadingLevel.HEADING_1,
+      2: HeadingLevel.HEADING_2,
+      3: HeadingLevel.HEADING_3,
+      4: HeadingLevel.HEADING_4,
+      5: HeadingLevel.HEADING_5,
+      6: HeadingLevel.HEADING_6,
+    };
+
+    function buildDocument(blocks: Block[]): Document {
+      const children: (Paragraph | Table)[] = [];
+
+      for (const block of blocks) {
+        switch (block.type) {
+          case 'heading':
+            children.push(new Paragraph({
+              heading: headingLevelMap[block.level!] || HeadingLevel.HEADING_1,
+              children: makeTextRuns(block.text!),
+            }));
+            break;
+
+          case 'paragraph':
+            children.push(new Paragraph({
+              children: makeTextRuns(block.text!),
+              spacing: { after: 120 },
+            }));
+            break;
+
+          case 'code_block':
+            children.push(new Paragraph({
+              children: [new TextRun({
+                text: block.text!,
+                font: 'Consolas',
+                size: 18, // 9pt
+              })],
+              indent: { left: 360 }, // 0.25 inch in twips
+              spacing: { before: 120, after: 120 },
+            }));
+            break;
+
+          case 'unordered_list':
+            for (const item of block.items!) {
+              children.push(new Paragraph({
+                children: makeTextRuns(item),
+                bullet: { level: 0 },
+                spacing: { after: 40 },
+              }));
+            }
+            break;
+
+          case 'ordered_list':
+            for (let idx = 0; idx < block.items!.length; idx++) {
+              children.push(new Paragraph({
+                children: [
+                  new TextRun({ text: `${idx + 1}. ` }),
+                  ...makeTextRuns(block.items![idx]),
+                ],
+                spacing: { after: 40 },
+                indent: { left: 360 },
+              }));
+            }
+            break;
+
+          case 'blockquote':
+            children.push(new Paragraph({
+              children: [new TextRun({
+                text: block.text!,
+                italics: true,
+              })],
+              indent: { left: 720 }, // 0.5 inch
+              spacing: { before: 120, after: 120 },
+            }));
+            break;
+
+          case 'hr':
+            children.push(new Paragraph({
+              children: [new TextRun({ text: '\u2500'.repeat(50) })],
+              spacing: { before: 240, after: 240 },
+            }));
+            break;
+
+          case 'table':
+            if (block.rows && block.rows.length > 0) {
+              const numCols = block.rows[0].length;
+              const tableRows = block.rows.map((rowData, rowIdx) =>
+                new TableRow({
+                  children: rowData.slice(0, numCols).map(cellText =>
+                    new TableCell({
+                      children: [new Paragraph({
+                        children: makeTextRuns(cellText, rowIdx === 0),
+                      })],
+                      width: { size: Math.floor(100 / numCols), type: WidthType.PERCENTAGE },
+                    })
+                  ),
+                })
+              );
+
+              children.push(new Table({
+                rows: tableRows,
+                width: { size: 100, type: WidthType.PERCENTAGE },
+              }));
+            }
+            break;
+        }
+      }
+
+      return new Document({
+        sections: [{ children }],
+      });
+    }
+
+    // ================================================================
+    // DOWNLOAD
+    // ================================================================
+
+    async function downloadDocx(doc: Document, filename: string) {
+      const blob = await Packer.toBlob(doc);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename.endsWith('.docx') ? filename : filename + '.docx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // ================================================================
+    // CONVERT TEXT TAB
+    // ================================================================
+
+    convertTextBtn.addEventListener('click', async () => {
+      const md = textarea.value.trim();
+      if (!md) return;
+
+      convertTextBtn.disabled = true;
+      convertTextBtn.textContent = 'Converting...';
+      setStatus('Converting markdown to Word...');
+      clearResults(textResults);
+
+      try {
+        const blocks = parseMarkdown(md);
+        const doc = buildDocument(blocks);
+        const fname = filenameInput.value.trim() || 'document';
+        await downloadDocx(doc, fname);
+
+        showResults(textResults, line(`Converted successfully — ${fname}.docx downloaded.`, 'mw-line-ok'));
+        setStatus('Conversion complete.');
+      } catch (e: any) {
+        showResults(textResults, line(`Error: ${e.message}`, 'mw-line-err'));
+        setStatus('Conversion failed.');
+      }
+
+      convertTextBtn.textContent = 'Convert to Word';
+      convertTextBtn.disabled = textarea.value.trim().length === 0;
+    });
+
+    // ================================================================
+    // CONVERT FILES TAB
+    // ================================================================
+
+    // Drop zone + file input
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('mw-drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('mw-drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('mw-drag-over');
+      if (e.dataTransfer?.files) {
+        addFiles(Array.from(e.dataTransfer.files));
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files) {
+        addFiles(Array.from(fileInput.files));
+      }
+      fileInput.value = ''; // reset for re-selection
+    });
+
+    function addFiles(files: File[]) {
+      const mdFiles = files.filter(f =>
+        f.name.endsWith('.md') || f.name.endsWith('.markdown') || f.name.endsWith('.txt')
+      );
+
+      if (mdFiles.length === 0) {
+        setStatus('No .md files found. Please select Markdown files.');
+        return;
+      }
+
+      // Avoid duplicates by name
+      for (const f of mdFiles) {
+        if (!selectedFiles.some(sf => sf.name === f.name)) {
+          selectedFiles.push(f);
+        }
+      }
+
+      renderFileList();
+      clearResults(filesResults);
+    }
+
+    function renderFileList() {
+      if (selectedFiles.length === 0) {
+        fileListEl.classList.remove('mw-visible');
+        convertFilesBtn.disabled = true;
+        clearFilesBtn.style.display = 'none';
+        return;
+      }
+
+      fileListEl.classList.add('mw-visible');
+      convertFilesBtn.disabled = false;
+      clearFilesBtn.style.display = '';
+
+      fileListEl.innerHTML = selectedFiles.map((f, idx) => `
+        <div class="mw-file-item" data-idx="${idx}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span class="mw-file-name">${escHtml(f.name)}</span>
+          <span class="mw-file-size">${formatSize(f.size)}</span>
+          <button class="mw-file-remove" data-idx="${idx}" title="Remove">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      `).join('');
+
+      // Bind remove buttons
+      fileListEl.querySelectorAll('.mw-file-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt((btn as HTMLElement).dataset.idx!, 10);
+          selectedFiles.splice(idx, 1);
+          renderFileList();
+        });
+      });
+    }
+
+    clearFilesBtn.addEventListener('click', () => {
+      selectedFiles = [];
+      renderFileList();
+      clearResults(filesResults);
+      setStatus('');
+    });
+
+    convertFilesBtn.addEventListener('click', async () => {
+      if (selectedFiles.length === 0) return;
+
+      convertFilesBtn.disabled = true;
+      convertFilesBtn.textContent = 'Converting...';
+      setStatus(`Converting ${selectedFiles.length} file(s)...`);
+      clearResults(filesResults);
+
+      let html = '';
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const file of selectedFiles) {
+        try {
+          const text = await file.text();
+          const blocks = parseMarkdown(text);
+          const doc = buildDocument(blocks);
+          const outName = file.name.replace(/\.(md|markdown|txt)$/i, '') + '.docx';
+          await downloadDocx(doc, outName);
+
+          html += line(`\u2713 ${outName}`, 'mw-line-ok');
+          successCount++;
+        } catch (e: any) {
+          html += line(`\u2717 ${file.name}: ${e.message}`, 'mw-line-err');
+          errorCount++;
+        }
+      }
+
+      html += line(`\nDone. ${successCount} converted, ${errorCount} error(s).`);
+      showResults(filesResults, html);
+      setStatus(`Converted ${successCount} of ${selectedFiles.length} file(s).`);
+
+      convertFilesBtn.textContent = 'Convert All';
+      convertFilesBtn.disabled = selectedFiles.length === 0;
+    });
+  })();
+</script>
