@@ -1,11 +1,12 @@
 ---
-title: "Brute Bookmarks"
+title: "BruteBookmarks"
 description: "A resizable, modern, and bloat-free bookmark manager."
-githubUrl: "https://github.com/HNTBO/brute-bookmarks"
 image: "/images/tools/brute-bookmarks.jpg"
 tags: ["Browser Extension", "Productivity"]
 featured: false
-isLive: false
+isLive: true
+livePath: "https://brutebookmarks.com"
+liveLabel: "Get Started"
 ---
 
 ## Overview

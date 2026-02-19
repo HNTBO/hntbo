@@ -6,7 +6,7 @@ image: "/images/tools/bubblebeat-card.webp"
 tags: ["React", "Video Production", "Web App"]
 featured: true
 isLive: true
-livePath: "https://bubblebeats.hntbo.com"
+livePath: "https://bubblebeats.app"
 liveLabel: "Get Started"
 ---
 
