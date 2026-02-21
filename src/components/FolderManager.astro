@@ -26,15 +26,15 @@
 <div id="fm-app" class="fm-container" style="display:none">
   <!-- Tabs -->
   <div class="fm-card">
-    <div class="fm-tabs" id="fm-tabs">
-      <button class="fm-tab active" data-tab="delete">Delete Empty Folders</button>
-      <button class="fm-tab" data-tab="duplicate">Duplicate Structure</button>
-      <button class="fm-tab" data-tab="count">Count Files</button>
+    <div class="fm-tabs" id="fm-tabs" role="tablist">
+      <button class="fm-tab active" id="fm-tab-delete" data-tab="delete" role="tab" aria-selected="true" aria-controls="fm-panel-delete" tabindex="0">Delete Empty Folders</button>
+      <button class="fm-tab" id="fm-tab-duplicate" data-tab="duplicate" role="tab" aria-selected="false" aria-controls="fm-panel-duplicate" tabindex="-1">Duplicate Structure</button>
+      <button class="fm-tab" id="fm-tab-count" data-tab="count" role="tab" aria-selected="false" aria-controls="fm-panel-count" tabindex="-1">Count Files</button>
     </div>
   </div>
 
   <!-- Tab: Delete Empty Folders -->
-  <div class="fm-panel" id="fm-panel-delete">
+  <div class="fm-panel" id="fm-panel-delete" role="tabpanel" aria-labelledby="fm-tab-delete">
     <div class="fm-card">
       <p class="fm-hint">Scan a folder for empty subfolders (no files anywhere in their subtree) and remove them.</p>
       <div class="fm-row">
@@ -50,7 +50,7 @@
   </div>
 
   <!-- Tab: Duplicate Structure -->
-  <div class="fm-panel" id="fm-panel-duplicate" style="display:none">
+  <div class="fm-panel" id="fm-panel-duplicate" role="tabpanel" aria-labelledby="fm-tab-duplicate" style="display:none">
     <div class="fm-card">
       <p class="fm-hint">Copy a folder's directory tree into a new location — folders only, no files.</p>
       <div class="fm-row">
@@ -70,7 +70,7 @@
   </div>
 
   <!-- Tab: Count Files -->
-  <div class="fm-panel" id="fm-panel-count" style="display:none">
+  <div class="fm-panel" id="fm-panel-count" role="tabpanel" aria-labelledby="fm-tab-count" style="display:none">
     <div class="fm-card">
       <p class="fm-hint">Browse a folder to see how many files are at root level vs. nested in subfolders.</p>
       <div class="fm-row">
@@ -89,7 +89,7 @@
 </div>
 
 <!-- Modal overlay -->
-<div class="fm-modal-overlay" id="fm-modal" style="display:none">
+<div class="fm-modal-overlay" id="fm-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="fm-modal-title">
   <div class="fm-modal">
     <h3 class="fm-modal-title" id="fm-modal-title">Confirm</h3>
     <div class="fm-modal-body" id="fm-modal-body"></div>
@@ -444,8 +444,9 @@
     // ----------------------------------------------------------------
     // State
     // ----------------------------------------------------------------
-    // Shared folder handle — used by Delete and Count tabs
-    let folderHandle: FileSystemDirectoryHandle | null = null;
+    // Separate folder handles per tab — Delete needs readwrite, Count only read
+    let delHandle: FileSystemDirectoryHandle | null = null;
+    let countHandle: FileSystemDirectoryHandle | null = null;
     let emptyFolders: string[] = [];
     let dupSrcHandle: FileSystemDirectoryHandle | null = null;
     let dupDestHandle: FileSystemDirectoryHandle | null = null;
@@ -496,19 +497,19 @@
       }
     }
 
-    /** Update the shared folder handle and sync both path displays + buttons. */
-    function setSharedFolder(handle: FileSystemDirectoryHandle) {
-      folderHandle = handle;
-      // Sync path displays
+    function setDelFolder(handle: FileSystemDirectoryHandle) {
+      delHandle = handle;
       setPathDisplay(delPath, handle.name);
-      setPathDisplay(countPath, handle.name);
-      // Enable action buttons
       delScan.disabled = false;
-      countRun.disabled = false;
-      // Reset stale scan results (folder changed)
       delRun.disabled = true;
       emptyFolders = [];
       clearResults(delResults);
+    }
+
+    function setCountFolder(handle: FileSystemDirectoryHandle) {
+      countHandle = handle;
+      setPathDisplay(countPath, handle.name);
+      countRun.disabled = false;
       clearResults(countResults);
     }
 
@@ -516,17 +517,22 @@
     // Modal
     // ----------------------------------------------------------------
     let modalResolve: ((v: boolean) => void) | null = null;
+    let modalTrigger: HTMLElement | null = null;
 
     function showModal(title: string, bodyHtml: string, confirmLabel: string = 'Confirm'): Promise<boolean> {
+      modalTrigger = document.activeElement as HTMLElement;
       modalTitle.textContent = title;
       modalBody.innerHTML = bodyHtml;
       modalConfirm.textContent = confirmLabel;
       modalOverlay.style.display = '';
+      modalCancel.focus();
       return new Promise(resolve => { modalResolve = resolve; });
     }
 
     function closeModal(result: boolean) {
       modalOverlay.style.display = 'none';
+      modalTrigger?.focus();
+      modalTrigger = null;
       if (modalResolve) { modalResolve(result); modalResolve = null; }
     }
 
@@ -534,6 +540,21 @@
     modalConfirm.addEventListener('click', () => closeModal(true));
     modalOverlay.addEventListener('click', (e) => {
       if (e.target === modalOverlay) closeModal(false);
+    });
+    modalOverlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { closeModal(false); return; }
+      if (e.key === 'Tab') {
+        const focusable = [modalCancel, modalConfirm];
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     });
 
     // ----------------------------------------------------------------
@@ -545,10 +566,27 @@
       const id = tab.dataset.tab as string;
       tabsEl.querySelectorAll('.fm-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
+      tabsEl.querySelectorAll('.fm-tab').forEach((t: Element) => {
+        t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+        (t as HTMLElement).tabIndex = t === tab ? 0 : -1;
+      });
       Object.entries(panels).forEach(([key, panel]) => {
         panel.style.display = key === id ? '' : 'none';
       });
       setStatus('');
+    });
+    tabsEl.addEventListener('keydown', (e) => {
+      const tabs = Array.from(tabsEl.querySelectorAll('.fm-tab')) as HTMLElement[];
+      const idx = tabs.indexOf(e.target as HTMLElement);
+      if (idx < 0) return;
+      let next = -1;
+      if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+      if (next >= 0) {
+        e.preventDefault();
+        tabs[next].focus();
+        tabs[next].click();
+      }
     });
 
     // ================================================================
@@ -607,7 +645,17 @@
             parent = await parent.getDirectoryHandle(segments[i]);
           }
           const target = segments[segments.length - 1];
-          await parent.removeEntry(target, { recursive: true });
+          const targetHandle = await parent.getDirectoryHandle(target);
+          let stillEmpty = true;
+          for await (const _ of (targetHandle as any).entries()) {
+            stillEmpty = false;
+            break;
+          }
+          if (!stillEmpty) {
+            errors.push(`${path}: skipped — folder is no longer empty`);
+            continue;
+          }
+          await parent.removeEntry(target);
           deleted.push(path);
         } catch (e: any) {
           errors.push(`${path}: ${e.message}`);
@@ -702,19 +750,19 @@
     delBrowse.addEventListener('click', async () => {
       const handle = await pickFolder('readwrite');
       if (!handle) return;
-      setSharedFolder(handle);
+      setDelFolder(handle);
       setStatus('');
     });
 
     delScan.addEventListener('click', async () => {
-      if (!folderHandle) return;
+      if (!delHandle) return;
       delScan.disabled = true;
       delScan.textContent = 'Scanning...';
       setStatus('Scanning for empty folders...');
       clearResults(delResults);
 
       try {
-        const { empties } = await scanEmptyFolders(folderHandle);
+        const { empties } = await scanEmptyFolders(delHandle);
         emptyFolders = empties.sort();
 
         if (emptyFolders.length === 0) {
@@ -737,11 +785,11 @@
     });
 
     delRun.addEventListener('click', async () => {
-      if (!folderHandle || emptyFolders.length === 0) return;
+      if (!delHandle || emptyFolders.length === 0) return;
 
       const confirmed = await showModal(
         'Delete Empty Folders',
-        `<p>This will permanently delete <strong>${emptyFolders.length}</strong> empty folder${emptyFolders.length > 1 ? 's' : ''} inside <strong>${escHtml(folderHandle.name)}</strong>.</p>
+        `<p>This will permanently delete <strong>${emptyFolders.length}</strong> empty folder${emptyFolders.length > 1 ? 's' : ''} inside <strong>${escHtml(delHandle.name)}</strong>.</p>
          <pre>${emptyFolders.map(f => escHtml(f)).join('\n')}</pre>
          <p>This cannot be undone.</p>`,
         'Delete'
@@ -751,7 +799,7 @@
       delRun.disabled = true;
       setStatus('Deleting empty folders...');
 
-      const { deleted, errors } = await deleteFolders(folderHandle, emptyFolders);
+      const { deleted, errors } = await deleteFolders(delHandle, emptyFolders);
 
       let html = '';
       deleted.forEach(p => { html += line(`Deleted: ${p}`, 'fm-line-ok'); });
@@ -851,20 +899,20 @@
     countBrowse.addEventListener('click', async () => {
       const handle = await pickFolder('read');
       if (!handle) return;
-      setSharedFolder(handle);
+      setCountFolder(handle);
       setStatus('');
     });
 
     countRun.addEventListener('click', async () => {
-      if (!folderHandle) return;
+      if (!countHandle) return;
       countRun.disabled = true;
       countRun.textContent = 'Counting...';
       setStatus('Counting files...');
 
       try {
-        const { root, total, folders } = await countFiles(folderHandle);
+        const { root, total, folders } = await countFiles(countHandle);
         const nested = total - root;
-        let html = line(`Folder: ${folderHandle.name}`);
+        let html = line(`Folder: ${countHandle.name}`);
         html += line(`Files at root level: ${root}`);
         html += line(`Files in subfolders: ${nested}`);
         html += line(`Total files: ${total}`);

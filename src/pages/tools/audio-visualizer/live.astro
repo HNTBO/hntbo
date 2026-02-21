@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import AudioVisualizer from '../../../components/AudioVisualizer.astro';
+import { toolsUrl } from '../../../utils/toolsUrl';
 ---
 
 <BaseLayout
@@ -10,7 +11,7 @@ import AudioVisualizer from '../../../components/AudioVisualizer.astro';
   <section class="pt-32 pb-16 md:pt-40 md:pb-24">
     <div class="container">
       <a
-        href="/tools/audio-visualizer"
+        href={toolsUrl('/tools/audio-visualizer')}
         class="inline-flex items-center text-text-secondary hover:text-accent transition-colors mb-8"
       >
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

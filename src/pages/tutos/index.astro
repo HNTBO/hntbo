@@ -5,8 +5,8 @@ import { getCollection } from 'astro:content';
 
 const tutorials = await getCollection('tutorials');
 const sortedTutorials = tutorials.sort((a, b) => {
-  const dateA = a.data.publishDate ? new Date(a.data.publishDate).getTime() : 0;
-  const dateB = b.data.publishDate ? new Date(b.data.publishDate).getTime() : 0;
+  const dateA = a.data.publishDate ? a.data.publishDate.getTime() : 0;
+  const dateB = b.data.publishDate ? b.data.publishDate.getTime() : 0;
   return dateB - dateA;
 });
 
@@ -25,11 +25,11 @@ const allTags = [...new Set(sortedTutorials.flatMap((item) => item.data.tags || 
 
       {allTags.length > 0 && (
         <div class="flex flex-wrap gap-2 mb-12">
-          <button class="tag filter-btn active" data-filter="all">
+          <button class="tag filter-btn active" data-filter="all" aria-pressed="true">
             All
           </button>
           {allTags.map((tag) => (
-            <button class="tag filter-btn" data-filter={tag}>{tag}</button>
+            <button class="tag filter-btn" data-filter={tag} aria-pressed="false">{tag}</button>
           ))}
         </div>
       )}
@@ -88,21 +88,6 @@ const allTags = [...new Set(sortedTutorials.flatMap((item) => item.data.tags || 
 </BaseLayout>
 
 <style>
-  .filter-btn {
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .filter-btn:hover {
-    border-color: rgba(255, 47, 114, 0.5);
-  }
-
-  .filter-btn.active {
-    background-color: rgba(255, 47, 114, 0.1);
-    border-color: rgba(255, 47, 114, 0.5);
-    color: #ff2f72;
-  }
-
   .tutorial-item {
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
@@ -120,8 +105,9 @@ const allTags = [...new Set(sortedTutorials.flatMap((item) => item.data.tags || 
     btn.addEventListener('click', () => {
       const filter = btn.getAttribute('data-filter');
 
-      filterBtns.forEach((b) => b.classList.remove('active'));
+      filterBtns.forEach((b) => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
 
       tutorialItems.forEach((item) => {
         const tags = JSON.parse(item.getAttribute('data-tags') || '[]');

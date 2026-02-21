@@ -8,19 +8,20 @@
 <div id="mw-app" class="mw-container">
   <!-- Tabs -->
   <div class="mw-card">
-    <div class="mw-tabs" id="mw-tabs">
-      <button class="mw-tab active" data-tab="text">Convert Text</button>
-      <button class="mw-tab" data-tab="files">Convert Files</button>
+    <div class="mw-tabs" id="mw-tabs" role="tablist">
+      <button class="mw-tab active" data-tab="text" id="mw-tab-text" role="tab" aria-selected="true" aria-controls="mw-panel-text" tabindex="0">Convert Text</button>
+      <button class="mw-tab" data-tab="files" id="mw-tab-files" role="tab" aria-selected="false" aria-controls="mw-panel-files" tabindex="-1">Convert Files</button>
     </div>
   </div>
 
   <!-- Tab: Convert Text -->
-  <div class="mw-panel" id="mw-panel-text">
+  <div class="mw-panel" id="mw-panel-text" role="tabpanel" aria-labelledby="mw-tab-text">
     <div class="mw-card">
-      <p class="mw-hint">Paste or type Markdown below, then convert it to a Word document.</p>
+      <p class="mw-hint">Paste or type Markdown below, then convert it to a Word document.<br/>Tip: Use <code>***text***</code> for bold italic. Nested formatting like <code>**bold *italic* bold**</code> is not supported.</p>
       <textarea
         id="mw-textarea"
         class="mw-textarea"
+        aria-label="Markdown input"
         placeholder="# My Document&#10;&#10;Write your **Markdown** here...&#10;&#10;- Item one&#10;- Item two&#10;- Item three"
         spellcheck="false"
       ></textarea>
@@ -43,15 +44,15 @@
   </div>
 
   <!-- Tab: Convert Files -->
-  <div class="mw-panel" id="mw-panel-files" style="display:none">
+  <div class="mw-panel" id="mw-panel-files" role="tabpanel" aria-labelledby="mw-tab-files" style="display:none">
     <div class="mw-card">
       <p class="mw-hint">Select one or more <code>.md</code> files to convert them all to Word documents.</p>
-      <div class="mw-drop-zone" id="mw-drop-zone">
+      <div class="mw-drop-zone" id="mw-drop-zone" tabindex="0" role="button" aria-label="Choose .md files to convert">
         <svg class="mw-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
         </svg>
         <p class="mw-drop-text">Drop .md files here or click to browse</p>
-        <input id="mw-file-input" type="file" accept=".md,.markdown,.txt" multiple hidden />
+        <input id="mw-file-input" type="file" accept=".md,.markdown,.txt" multiple hidden aria-label="Select Markdown files" />
       </div>
       <div class="mw-file-list" id="mw-file-list"></div>
       <div class="mw-actions">
@@ -409,21 +410,28 @@
 </style>
 
 <script>
-  import {
-    Document,
-    Packer,
-    Paragraph,
-    TextRun,
-    HeadingLevel,
-    AlignmentType,
-    BorderStyle,
-    Table,
-    TableRow,
-    TableCell,
-    WidthType,
-  } from 'docx';
-
   (function () {
+    // ----------------------------------------------------------------
+    // Lazy-load docx library (352KB — only loaded when user converts)
+    // ----------------------------------------------------------------
+    let Document: any, Packer: any, Paragraph: any, TextRun: any, HeadingLevel: any, AlignmentType: any, BorderStyle: any, Table: any, TableRow: any, TableCell: any, WidthType: any;
+
+    async function loadDocx() {
+      if (Document) return;
+      const m = await import('docx');
+      Document = m.Document;
+      Packer = m.Packer;
+      Paragraph = m.Paragraph;
+      TextRun = m.TextRun;
+      HeadingLevel = m.HeadingLevel;
+      AlignmentType = m.AlignmentType;
+      BorderStyle = m.BorderStyle;
+      Table = m.Table;
+      TableRow = m.TableRow;
+      TableCell = m.TableCell;
+      WidthType = m.WidthType;
+    }
+
     // ----------------------------------------------------------------
     // DOM refs
     // ----------------------------------------------------------------
@@ -491,10 +499,28 @@
       const id = tab.dataset.tab as string;
       tabsEl.querySelectorAll('.mw-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
+      tabsEl.querySelectorAll('.mw-tab').forEach(t => {
+        t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+        (t as HTMLElement).tabIndex = t === tab ? 0 : -1;
+      });
       Object.entries(panels).forEach(([key, panel]) => {
         panel.style.display = key === id ? '' : 'none';
       });
       setStatus('');
+    });
+
+    tabsEl.addEventListener('keydown', (e) => {
+      const tabs = Array.from(tabsEl.querySelectorAll('.mw-tab')) as HTMLElement[];
+      const idx = tabs.indexOf(e.target as HTMLElement);
+      if (idx < 0) return;
+      let next = -1;
+      if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+      if (next >= 0) {
+        e.preventDefault();
+        tabs[next].focus();
+        tabs[next].click();
+      }
     });
 
     // ----------------------------------------------------------------
@@ -516,6 +542,8 @@
       text?: string;        // paragraph, blockquote, code_block
       language?: string;    // code_block
       items?: string[];     // list items
+      itemLevels?: number[];
+      startNumber?: number;
       rows?: string[][];    // table rows (first row = header)
     }
 
@@ -527,7 +555,6 @@
       if (/^\d+\.\s/.test(line)) return true;
       if (line.startsWith('>')) return true;
       if (/^[\-\*_]{3,}\s*$/.test(line)) return true;
-      if (line.includes('|')) return true;
       return false;
     }
 
@@ -565,29 +592,57 @@
             i++;
           }
           blocks.push({ type: 'code_block', text: codeLines.join('\n'), language });
-          i++; // skip closing ```
+          if (i < lines.length) i++;
+          continue;
+        }
+
+        // Horizontal rule (must check before unordered list)
+        if (/^[\-\*_]{3,}\s*$/.test(ln) || /^(\*\s){2,}\*\s*$/.test(ln) || /^(-\s){2,}-\s*$/.test(ln)) {
+          blocks.push({ type: 'hr' });
+          i++;
           continue;
         }
 
         // Unordered lists
         if (/^[\*\-\+]\s/.test(ln)) {
           const items: string[] = [];
-          while (i < lines.length && /^[\*\-\+]\s/.test(lines[i])) {
-            items.push(lines[i].replace(/^[\*\-\+]\s/, ''));
-            i++;
+          const itemLevels: number[] = [];
+          while (i < lines.length) {
+            const indentMatch = lines[i].match(/^(\s*)/);
+            const indent = indentMatch ? indentMatch[1].length : 0;
+            const trimmedLine = lines[i].trimStart();
+            if (/^[\*\-\+]\s/.test(trimmedLine)) {
+              items.push(trimmedLine.replace(/^[\*\-\+]\s/, ''));
+              itemLevels.push(indent >= 2 ? 1 : 0);
+              i++;
+            } else if (/^\s+/.test(lines[i]) && lines[i].trim() && !/^[\*\-\+]\s/.test(trimmedLine) && !/^\d+\.\s/.test(trimmedLine)) {
+              items[items.length - 1] += ' ' + lines[i].trim();
+              i++;
+            } else {
+              break;
+            }
           }
-          blocks.push({ type: 'unordered_list', items });
+          blocks.push({ type: 'unordered_list', items, itemLevels });
           continue;
         }
 
         // Ordered lists
         if (/^\d+\.\s/.test(ln)) {
           const items: string[] = [];
-          while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
-            items.push(lines[i].replace(/^\d+\.\s/, ''));
-            i++;
+          const startMatch = ln.match(/^(\d+)\./);
+          const startNumber = startMatch ? parseInt(startMatch[1], 10) : 1;
+          while (i < lines.length) {
+            if (/^\d+\.\s/.test(lines[i])) {
+              items.push(lines[i].replace(/^\d+\.\s/, ''));
+              i++;
+            } else if (/^\s+/.test(lines[i]) && lines[i].trim() && !/^[\*\-\+]\s/.test(lines[i].trimStart()) && !/^\d+\.\s/.test(lines[i].trimStart())) {
+              items[items.length - 1] += ' ' + lines[i].trim();
+              i++;
+            } else {
+              break;
+            }
           }
-          blocks.push({ type: 'ordered_list', items });
+          blocks.push({ type: 'ordered_list', items, startNumber });
           continue;
         }
 
@@ -602,25 +657,28 @@
           continue;
         }
 
-        // Horizontal rule
-        if (/^[\-\*_]{3,}\s*$/.test(ln)) {
-          blocks.push({ type: 'hr' });
-          i++;
-          continue;
-        }
-
-        // Tables
+        // Tables — only if a separator row is present
         if (ln.includes('|')) {
           const tableLines: string[] = [];
-          while (i < lines.length && lines[i].includes('|')) {
-            tableLines.push(lines[i]);
-            i++;
+          let tempI = i;
+          while (tempI < lines.length && lines[tempI].includes('|')) {
+            tableLines.push(lines[tempI]);
+            tempI++;
           }
-          const rows = parseTableLines(tableLines);
-          if (rows.length > 0) {
-            blocks.push({ type: 'table', rows });
+          const hasSeparator = tableLines.some(l => {
+            let trimmed = l.trim();
+            if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
+            if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
+            return /^[\s\-:|]+$/.test(trimmed);
+          });
+          if (hasSeparator) {
+            i = tempI;
+            const rows = parseTableLines(tableLines);
+            if (rows.length > 0) {
+              blocks.push({ type: 'table', rows });
+            }
+            continue;
           }
-          continue;
         }
 
         // Regular paragraph — collect consecutive non-special lines
@@ -764,33 +822,39 @@
             }));
             break;
 
-          case 'code_block':
-            children.push(new Paragraph({
-              children: [new TextRun({
-                text: block.text!,
-                font: 'Consolas',
-                size: 18, // 9pt
-              })],
-              indent: { left: 360 }, // 0.25 inch in twips
-              spacing: { before: 120, after: 120 },
-            }));
+          case 'code_block': {
+            const codeLines = block.text!.split('\n');
+            for (let idx = 0; idx < codeLines.length; idx++) {
+              children.push(new Paragraph({
+                children: [new TextRun({
+                  text: codeLines[idx] || ' ',
+                  font: 'Consolas',
+                  size: 18,
+                })],
+                indent: { left: 360 },
+                spacing: { before: idx === 0 ? 120 : 0, after: idx === codeLines.length - 1 ? 120 : 0 },
+              }));
+            }
             break;
+          }
 
           case 'unordered_list':
-            for (const item of block.items!) {
+            for (let idx = 0; idx < block.items!.length; idx++) {
+              const level = block.itemLevels?.[idx] ?? 0;
               children.push(new Paragraph({
-                children: makeTextRuns(item),
-                bullet: { level: 0 },
+                children: makeTextRuns(block.items![idx]),
+                bullet: { level },
                 spacing: { after: 40 },
               }));
             }
             break;
 
-          case 'ordered_list':
+          case 'ordered_list': {
+            const start = block.startNumber ?? 1;
             for (let idx = 0; idx < block.items!.length; idx++) {
               children.push(new Paragraph({
                 children: [
-                  new TextRun({ text: `${idx + 1}. ` }),
+                  new TextRun({ text: `${start + idx}. ` }),
                   ...makeTextRuns(block.items![idx]),
                 ],
                 spacing: { after: 40 },
@@ -798,17 +862,27 @@
               }));
             }
             break;
+          }
 
-          case 'blockquote':
+          case 'blockquote': {
+            const configs = formatInline(block.text!);
+            const runs = configs.map(c => {
+              const opts: any = { text: c.text, italics: true };
+              if (c.bold) opts.bold = true;
+              if (c.underline) opts.underline = {};
+              if (c.code) {
+                opts.font = 'Consolas';
+                opts.size = 20;
+              }
+              return new TextRun(opts);
+            });
             children.push(new Paragraph({
-              children: [new TextRun({
-                text: block.text!,
-                italics: true,
-              })],
-              indent: { left: 720 }, // 0.5 inch
+              children: runs,
+              indent: { left: 720 },
               spacing: { before: 120, after: 120 },
             }));
             break;
+          }
 
           case 'hr':
             children.push(new Paragraph({
@@ -876,10 +950,12 @@
       setStatus('Converting markdown to Word...');
       clearResults(textResults);
 
+      await loadDocx();
+
       try {
         const blocks = parseMarkdown(md);
         const doc = buildDocument(blocks);
-        const fname = filenameInput.value.trim() || 'document';
+        const fname = (filenameInput.value.trim() || 'document').replace(/[<>:"/\\|?*]/g, '_');
         await downloadDocx(doc, fname);
 
         showResults(textResults, line(`Converted successfully — ${fname}.docx downloaded.`, 'mw-line-ok'));
@@ -899,6 +975,13 @@
 
     // Drop zone + file input
     dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
 
     dropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -936,7 +1019,7 @@
 
       // Avoid duplicates by name
       for (const f of mdFiles) {
-        if (!selectedFiles.some(sf => sf.name === f.name)) {
+        if (!selectedFiles.some(sf => sf.name === f.name && sf.size === f.size && sf.lastModified === f.lastModified)) {
           selectedFiles.push(f);
         }
       }
@@ -964,7 +1047,7 @@
           </svg>
           <span class="mw-file-name">${escHtml(f.name)}</span>
           <span class="mw-file-size">${formatSize(f.size)}</span>
-          <button class="mw-file-remove" data-idx="${idx}" title="Remove">
+          <button class="mw-file-remove" data-idx="${idx}" title="Remove" aria-label="Remove ${escHtml(f.name)}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -998,6 +1081,8 @@
       setStatus(`Converting ${selectedFiles.length} file(s)...`);
       clearResults(filesResults);
 
+      await loadDocx();
+
       let html = '';
       let successCount = 0;
       let errorCount = 0;
@@ -1007,7 +1092,7 @@
           const text = await file.text();
           const blocks = parseMarkdown(text);
           const doc = buildDocument(blocks);
-          const outName = file.name.replace(/\.(md|markdown|txt)$/i, '') + '.docx';
+          const outName = file.name.replace(/\.(md|markdown|txt)$/i, '').replace(/[<>:"/\\|?*]/g, '_') + '.docx';
           await downloadDocx(doc, outName);
 
           html += line(`\u2713 ${outName}`, 'mw-line-ok');

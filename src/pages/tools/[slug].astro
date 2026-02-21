@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import { toolsUrl } from '../../utils/toolsUrl';
 
 export async function getStaticPaths() {
   const tools = await getCollection('tools');
@@ -22,7 +23,7 @@ const { Content } = await tool.render();
   <article class="pt-32 pb-16 md:pt-40 md:pb-24">
     <div class="container max-w-4xl">
       <a
-        href="/tools"
+        href={toolsUrl('/tools')}
         class="inline-flex items-center text-text-secondary hover:text-accent transition-colors mb-8"
       >
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,6 +49,7 @@ const { Content } = await tool.render();
           <a
             href={tool.data.livePath}
             class="btn btn-primary inline-flex"
+            {...(tool.data.livePath.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
           >
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />

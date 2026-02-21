@@ -84,12 +84,12 @@
   }
 
   .animated-logo .letter.active {
-    color: #ff2f72 !important;
+    color: var(--color-accent);
   }
 
   .animated-logo .reveal {
     display: none;
-    color: #ff2f72 !important;
+    color: var(--color-accent);
   }
 
   .animated-logo .reveal.visible {
@@ -149,7 +149,9 @@
     // Initialize floppy at rot-0
     if (floppy) floppy.classList.add('rot-0');
 
-    // Start after a short delay
-    setTimeout(runCycle, 2000);
+    // Start after a short delay (skip if user prefers reduced motion)
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setTimeout(runCycle, 2000);
+    }
   }
 </script>

@@ -5,6 +5,7 @@
 @layer base {
   html {
     @apply bg-background text-text-primary;
+    --color-accent: theme('colors.accent');
     scroll-behavior: smooth;
   }
 
@@ -238,4 +239,25 @@
   .prose .video-embed {
     @apply my-8;
   }
+
+  .filter-btn {
+    cursor: pointer;
+    @apply transition-all duration-200;
+  }
+
+  .filter-btn:hover {
+    @apply border-accent/50;
+  }
+
+  .filter-btn.active {
+    @apply bg-accent/10 border-accent/50 text-accent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
 }

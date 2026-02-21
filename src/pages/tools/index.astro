@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Card from '../../components/Card.astro';
 import { getCollection } from 'astro:content';
+import { toolsUrl } from '../../utils/toolsUrl';
 
 const tools = await getCollection('tools');
 const sortedTools = tools.sort((a, b) => {
@@ -25,11 +26,11 @@ const allTags = [...new Set(sortedTools.flatMap((item) => item.data.tags || []))
 
       {allTags.length > 0 && (
         <div class="flex flex-wrap gap-2 mb-12">
-          <button class="tag filter-btn active" data-filter="all">
+          <button class="tag filter-btn active" data-filter="all" aria-pressed="true">
             All
           </button>
           {allTags.map((tag) => (
-            <button class="tag filter-btn" data-filter={tag}>{tag}</button>
+            <button class="tag filter-btn" data-filter={tag} aria-pressed="false">{tag}</button>
           ))}
         </div>
       )}
@@ -62,7 +63,7 @@ const allTags = [...new Set(sortedTools.flatMap((item) => item.data.tags || []))
             <div class="tool-item" data-tags={JSON.stringify(tool.data.tags || [])}>
               <Card
                 title={tool.data.title}
-                href={`/tools/${tool.slug}`}
+                href={toolsUrl(`/tools/${tool.slug}`)}
                 image={tool.data.image}
                 tags={tool.data.tags}
               />
@@ -89,21 +90,6 @@ const allTags = [...new Set(sortedTools.flatMap((item) => item.data.tags || []))
 </BaseLayout>
 
 <style>
-  .filter-btn {
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .filter-btn:hover {
-    border-color: rgba(255, 47, 114, 0.5);
-  }
-
-  .filter-btn.active {
-    background-color: rgba(255, 47, 114, 0.1);
-    border-color: rgba(255, 47, 114, 0.5);
-    color: #ff2f72;
-  }
-
   .tool-item {
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
@@ -121,8 +107,9 @@ const allTags = [...new Set(sortedTools.flatMap((item) => item.data.tags || []))
     btn.addEventListener('click', () => {
       const filter = btn.getAttribute('data-filter');
 
-      filterBtns.forEach((b) => b.classList.remove('active'));
+      filterBtns.forEach((b) => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
 
       toolItems.forEach((item) => {
         const tags = JSON.parse(item.getAttribute('data-tags') || '[]');

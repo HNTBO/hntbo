@@ -19,11 +19,11 @@
         <select id="av-micSelect"></select>
       </div>
       <div>
-        <label>&nbsp;</label>
+        <span aria-hidden="true">&nbsp;</span>
         <button id="av-startBtn" class="av-btn-primary">Start</button>
       </div>
       <div>
-        <label>&nbsp;</label>
+        <span aria-hidden="true">&nbsp;</span>
         <button id="av-stopBtn" disabled>Stop</button>
       </div>
     </div>
@@ -39,7 +39,7 @@
         <select id="av-presetSelect"></select>
       </div>
       <div>
-        <label>&nbsp;</label>
+        <span aria-hidden="true">&nbsp;</span>
         <button id="av-applyPreset">Apply</button>
       </div>
       <div>
@@ -47,11 +47,11 @@
         <input id="av-presetName" type="text" placeholder="New preset name" />
       </div>
       <div>
-        <label>&nbsp;</label>
+        <span aria-hidden="true">&nbsp;</span>
         <button id="av-savePreset" class="av-btn-primary">Save / Update</button>
       </div>
       <div>
-        <label>&nbsp;</label>
+        <span aria-hidden="true">&nbsp;</span>
         <button id="av-deletePreset">Delete</button>
       </div>
     </div>
@@ -62,9 +62,9 @@
     <div class="av-viz-wrap">
       <canvas id="av-viz"></canvas>
     </div>
-    <div class="av-tabs" id="av-tabs">
-      <div class="av-tab active" data-viz="bars">Bars</div>
-      <div class="av-tab" data-viz="osc">Oscilloscope</div>
+    <div class="av-tabs" id="av-tabs" role="tablist">
+      <button class="av-tab active" data-viz="bars" id="av-tab-bars" role="tab" aria-selected="true" tabindex="0">Bars</button>
+      <button class="av-tab" data-viz="osc" id="av-tab-osc" role="tab" aria-selected="false" tabindex="-1">Oscilloscope</button>
     </div>
     <div class="av-grid">
       <div data-mode="shared">
@@ -77,39 +77,39 @@
       </div>
       <div data-mode="shared">
         <label for="av-glow">Glow</label>
-        <div class="av-pair"><input id="av-glow" type="range" min="0" max="40" step="1" value="14" /><input id="av-glowN" type="number" min="0" max="40" step="1" value="14" /></div>
+        <div class="av-pair"><input id="av-glow" type="range" min="0" max="40" step="1" value="14" /><input id="av-glowN" type="number" min="0" max="40" step="1" value="14" aria-label="Glow value" /></div>
       </div>
       <div data-mode="bars">
         <label for="av-radius">Bar corner radius</label>
-        <div class="av-pair"><input id="av-radius" type="range" min="0" max="24" step="1" value="12" /><input id="av-radiusN" type="number" min="0" max="24" step="1" value="12" /></div>
+        <div class="av-pair"><input id="av-radius" type="range" min="0" max="24" step="1" value="12" /><input id="av-radiusN" type="number" min="0" max="24" step="1" value="12" aria-label="Bar corner radius value" /></div>
       </div>
       <div data-mode="bars">
         <label for="av-noiseAmp">Noise amplitude %</label>
-        <div class="av-pair"><input id="av-noiseAmp" type="range" min="0" max="100" step="0.1" value="12" /><input id="av-noiseAmpN" type="number" min="0" max="100" step="0.1" value="12" /></div>
+        <div class="av-pair"><input id="av-noiseAmp" type="range" min="0" max="100" step="0.1" value="12" /><input id="av-noiseAmpN" type="number" min="0" max="100" step="0.1" value="12" aria-label="Noise amplitude value" /></div>
       </div>
       <div data-mode="bars">
         <label for="av-noiseHz">Noise speed (Hz)</label>
-        <div class="av-pair"><input id="av-noiseHz" type="range" min="0" max="5" step="0.05" value="0.6" /><input id="av-noiseHzN" type="number" min="0" max="5" step="0.05" value="0.6" /></div>
+        <div class="av-pair"><input id="av-noiseHz" type="range" min="0" max="5" step="0.05" value="0.6" /><input id="av-noiseHzN" type="number" min="0" max="5" step="0.05" value="0.6" aria-label="Noise speed value" /></div>
       </div>
       <div data-mode="bars">
         <label for="av-barsCount">Bars per side</label>
-        <div class="av-pair"><input id="av-barsCount" type="range" min="6" max="64" step="1" value="20" /><input id="av-barsCountN" type="number" min="6" max="64" step="1" value="20" /></div>
+        <div class="av-pair"><input id="av-barsCount" type="range" min="6" max="64" step="1" value="20" /><input id="av-barsCountN" type="number" min="6" max="64" step="1" value="20" aria-label="Bars per side value" /></div>
       </div>
       <div data-mode="osc" style="display:none">
         <label for="av-oscLineW">Line width</label>
-        <div class="av-pair"><input id="av-oscLineW" type="range" min="0.5" max="8" step="0.5" value="2.5" /><input id="av-oscLineWN" type="number" min="0.5" max="8" step="0.5" value="2.5" /></div>
+        <div class="av-pair"><input id="av-oscLineW" type="range" min="0.5" max="8" step="0.5" value="2.5" /><input id="av-oscLineWN" type="number" min="0.5" max="8" step="0.5" value="2.5" aria-label="Line width value" /></div>
       </div>
       <div data-mode="osc" style="display:none">
         <label for="av-oscScale">Vertical scale %</label>
-        <div class="av-pair"><input id="av-oscScale" type="range" min="10" max="100" step="1" value="90" /><input id="av-oscScaleN" type="number" min="10" max="100" step="1" value="90" /></div>
+        <div class="av-pair"><input id="av-oscScale" type="range" min="10" max="100" step="1" value="90" /><input id="av-oscScaleN" type="number" min="10" max="100" step="1" value="90" aria-label="Vertical scale value" /></div>
       </div>
       <div data-mode="osc" style="display:none">
         <label for="av-oscRes">Resolution</label>
-        <div class="av-pair"><input id="av-oscRes" type="range" min="1" max="100" step="1" value="100" /><input id="av-oscResN" type="number" min="1" max="100" step="1" value="100" /></div>
+        <div class="av-pair"><input id="av-oscRes" type="range" min="1" max="100" step="1" value="100" /><input id="av-oscResN" type="number" min="1" max="100" step="1" value="100" aria-label="Resolution value" /></div>
       </div>
       <div data-mode="osc" style="display:none">
         <label for="av-oscFill">Fill opacity %</label>
-        <div class="av-pair"><input id="av-oscFill" type="range" min="0" max="100" step="1" value="0" /><input id="av-oscFillN" type="number" min="0" max="100" step="1" value="0" /></div>
+        <div class="av-pair"><input id="av-oscFill" type="range" min="0" max="100" step="1" value="0" /><input id="av-oscFillN" type="number" min="0" max="100" step="1" value="0" aria-label="Fill opacity value" /></div>
       </div>
     </div>
   </div>
@@ -121,18 +121,19 @@
   .av-container {
     --av-gap: 12px;
     --av-bg: #0a0b10;
-    --av-panel: #12141a;
+    --av-surface: #12141a;
     --av-border: #252833;
     --av-ink: #f5f5f7;
-    --av-ink-secondary: #8e8e93;
+    --av-ink2: #8e8e93;
     --av-accent: #ff2f72;
     --av-accent-hover: #ff5a8f;
+    --av-danger: #ff4444;
     display: grid;
     gap: var(--av-gap);
   }
 
   .av-card {
-    background: var(--av-panel);
+    background: var(--av-surface);
     border: 1px solid var(--av-border);
     border-radius: 14px;
     padding: 16px;
@@ -167,7 +168,7 @@
 
   .av-container label {
     font-size: 12px;
-    color: var(--av-ink-secondary);
+    color: var(--av-ink2);
     display: block;
     margin-bottom: 6px;
   }
@@ -199,14 +200,13 @@
   }
 
   .av-btn-primary {
-    background: var(--av-accent) !important;
-    border-color: var(--av-accent) !important;
-    color: var(--av-bg) !important;
+    border-color: var(--av-accent);
+    color: var(--av-accent);
   }
 
   .av-btn-primary:hover:not(:disabled) {
-    background: var(--av-accent-hover) !important;
-    border-color: var(--av-accent-hover) !important;
+    background: var(--av-accent);
+    color: var(--av-bg);
   }
 
   .av-container button:disabled {
@@ -217,14 +217,14 @@
   .av-msg {
     margin-top: 8px;
     font-size: 13px;
-    color: #ffb3b3;
+    color: var(--av-danger);
     min-height: 1.4em;
   }
 
   .av-hint,
   .av-preset-hint {
     font-size: 13px;
-    color: var(--av-ink-secondary);
+    color: var(--av-ink2);
     margin-top: 8px;
     margin-bottom: 0;
   }
@@ -256,11 +256,12 @@
     padding: 8px 12px;
     border-radius: 999px;
     border: 1px solid var(--av-border);
-    background: var(--av-bg);
+    background: none;
     cursor: pointer;
     user-select: none;
-    color: var(--av-ink-secondary);
+    color: var(--av-ink2);
     font-size: 14px;
+    font-family: inherit;
     transition: all 0.2s ease;
   }
 
@@ -354,6 +355,9 @@
     }
     fitCanvas();
     window.addEventListener('resize', fitCanvas);
+    window.addEventListener('beforeunload', () => {
+      window.removeEventListener('resize', fitCanvas);
+    });
 
     function setMsg(t: string) { msg.textContent = t || ''; }
 
@@ -616,6 +620,8 @@
       modeEl.disabled = true;
       try {
         if (isMic) {
+          await primePermission();
+          await listMics();
           const requestedId = micSelect.value || 'default';
           stream = await getMicStream(requestedId);
           const track = stream.getAudioTracks()[0];
@@ -644,6 +650,10 @@
       if (audioCtx) try { audioCtx.close(); } catch {}
       if (stream) stream.getTracks().forEach(t => t.stop());
       sink.srcObject = null;
+      audioCtx = null;
+      analyser = null;
+      srcNode = null;
+      stream = null;
       startBtn.textContent = 'Start';
       startBtn.disabled = false;
       stopBtn.disabled = true;
@@ -663,8 +673,26 @@
       if (!t) return;
       tabsEl.querySelectorAll('.av-tab').forEach(el => el.classList.remove('active'));
       t.classList.add('active');
+      tabsEl.querySelectorAll('.av-tab').forEach(el => {
+        el.setAttribute('aria-selected', el === t ? 'true' : 'false');
+        (el as HTMLElement).tabIndex = el === t ? 0 : -1;
+      });
       vizMode = t.dataset.viz || 'bars';
       updateControlVisibility();
+    });
+
+    tabsEl.addEventListener('keydown', (e) => {
+      const tabs = Array.from(tabsEl.querySelectorAll('.av-tab')) as HTMLElement[];
+      const idx = tabs.indexOf(e.target as HTMLElement);
+      if (idx < 0) return;
+      let next = -1;
+      if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+      if (next >= 0) {
+        e.preventDefault();
+        tabs[next].focus();
+        tabs[next].click();
+      }
     });
 
     modeEl.addEventListener('change', () => {
@@ -876,9 +904,6 @@
 
     // Boot
     (async () => {
-      if (secureOk()) { await primePermission(); }
-      await listMics();
-      micSelect.value = currentDeviceId;
       micWrap.style.display = 'block';
       fitCanvas();
       canvas.style.background = bgEl.value;
