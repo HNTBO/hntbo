@@ -806,14 +806,17 @@
     // DOCUMENT BUILDER
     // ================================================================
 
-    const headingLevelMap: Record<number, typeof HeadingLevel[keyof typeof HeadingLevel]> = {
-      1: HeadingLevel.HEADING_1,
-      2: HeadingLevel.HEADING_2,
-      3: HeadingLevel.HEADING_3,
-      4: HeadingLevel.HEADING_4,
-      5: HeadingLevel.HEADING_5,
-      6: HeadingLevel.HEADING_6,
-    };
+    function getHeadingLevel(level: number) {
+      const headingLevelMap: Record<number, typeof HeadingLevel[keyof typeof HeadingLevel]> = {
+        1: HeadingLevel.HEADING_1,
+        2: HeadingLevel.HEADING_2,
+        3: HeadingLevel.HEADING_3,
+        4: HeadingLevel.HEADING_4,
+        5: HeadingLevel.HEADING_5,
+        6: HeadingLevel.HEADING_6,
+      };
+      return headingLevelMap[level] || HeadingLevel.HEADING_1;
+    }
 
     function buildDocument(blocks: Block[]): Document {
       const children: (Paragraph | Table)[] = [];
@@ -822,7 +825,7 @@
         switch (block.type) {
           case 'heading':
             children.push(new Paragraph({
-              heading: headingLevelMap[block.level!] || HeadingLevel.HEADING_1,
+              heading: getHeadingLevel(block.level!),
               children: makeTextRuns(block.text!),
             }));
             break;
@@ -993,6 +996,10 @@
       fileInput.click();
     }
 
+    function hasDraggedFiles(event: DragEvent) {
+      return Array.from(event.dataTransfer?.types || []).includes('Files');
+    }
+
     // Drop zone + file input
     dropZone.addEventListener('click', () => openFilePicker());
 
@@ -1022,6 +1029,18 @@
       dropZone.classList.remove('mw-drag-over');
       if (e.dataTransfer?.files) {
         addFiles(Array.from(e.dataTransfer.files));
+      }
+    });
+
+    window.addEventListener('dragover', (e) => {
+      if (hasDraggedFiles(e)) {
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener('drop', (e) => {
+      if (hasDraggedFiles(e)) {
+        e.preventDefault();
       }
     });
 
