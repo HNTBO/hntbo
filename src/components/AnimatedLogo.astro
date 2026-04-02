@@ -48,11 +48,8 @@
       <rect x="10" y="2" width="2" height="3" fill="#c80542"/>
     </svg>
   </span>
-  <span class="letter l1">H</span><span class="reveal r1">OW</span>
-  <span class="letter l2">N</span><span class="reveal r2">OT</span>
-  <span class="letter l3">T</span><span class="reveal r3">O</span>
-  <span class="letter l4">B</span><span class="reveal r4">E</span>
-  <span class="letter l5">O</span><span class="reveal r5">BSOLETE</span>
+  <span class="compact-wordmark" aria-hidden="true"><span class="letter l1">H</span><span class="reveal r1">OW</span><span class="letter l2">N</span><span class="reveal r2">OT</span><span class="letter l3">T</span><span class="reveal r3">O</span><span class="letter l4">B</span><span class="reveal r4">E</span><span class="letter l5">O</span><span class="reveal r5">BSOLETE</span></span>
+  <span class="full-wordmark" aria-hidden="true">How Not To Be Obsolete</span>
 </span>
 
 <style is:global>
@@ -60,6 +57,19 @@
     display: inline-flex;
     align-items: center;
     font-weight: bold;
+  }
+
+  .animated-logo .full-wordmark {
+    display: none;
+    color: var(--color-accent);
+  }
+
+  .animated-logo[data-motion='reduced'] .compact-wordmark {
+    display: none;
+  }
+
+  .animated-logo[data-motion='reduced'] .full-wordmark {
+    display: inline;
   }
 
   .animated-logo .floppy {
@@ -97,6 +107,16 @@
     margin-left: 0.05em;
     margin-right: 0.05em;
   }
+
+  @media (max-width: 640px) {
+    .animated-logo[data-motion='reduced'] .compact-wordmark {
+      display: inline;
+    }
+
+    .animated-logo[data-motion='reduced'] .full-wordmark {
+      display: none;
+    }
+  }
 </style>
 
 <script>
@@ -105,6 +125,9 @@
     const reveals = logo.querySelectorAll('.reveal');
     const letters = logo.querySelectorAll('.letter');
     const floppy = logo.querySelector('.floppy');
+    let frameTimers: number[] = [];
+    let loopTimer: number | null = null;
+    let cycleStarted = false;
 
     const setRotation = (rotation: number) => {
       if (floppy) {
@@ -128,7 +151,18 @@
       }
     };
 
+    const clearCycle = () => {
+      frameTimers.forEach(timer => window.clearTimeout(timer));
+      frameTimers = [];
+      if (loopTimer !== null) {
+        window.clearTimeout(loopTimer);
+        loopTimer = null;
+      }
+      cycleStarted = false;
+    };
+
     const runCycle = () => {
+      frameTimers = [];
       const timing = [
         { reveal: 0, delay: 0, rot: 1 },        // HOW - 90°
         { reveal: 1, delay: 2000, rot: 2 },     // NOT - 180°
@@ -139,19 +173,40 @@
       ];
 
       timing.forEach(({ reveal, delay, rot }) => {
-        setTimeout(() => showReveal(reveal, rot), delay);
+        frameTimers.push(window.setTimeout(() => showReveal(reveal, rot), delay));
       });
 
       // Wait 5s at HNTBO, then restart cycle
-      setTimeout(runCycle, 15000);
+      loopTimer = window.setTimeout(() => runCycle(), 15000);
     };
 
     // Initialize floppy at rot-0
     if (floppy) floppy.classList.add('rot-0');
 
-    // Start after a short delay (skip if user prefers reduced motion)
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setTimeout(runCycle, 2000);
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncMotionPreference = () => {
+      if (mediaQuery.matches) {
+        clearCycle();
+        logo.setAttribute('data-motion', 'reduced');
+        reveals.forEach(r => r.classList.remove('visible'));
+        letters.forEach(l => l.classList.remove('active'));
+        setRotation(0);
+        return;
+      }
+
+      logo.removeAttribute('data-motion');
+      if (!cycleStarted) {
+        cycleStarted = true;
+        loopTimer = window.setTimeout(() => runCycle(), 2000);
+      }
+    };
+
+    syncMotionPreference();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', syncMotionPreference);
+    } else if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(syncMotionPreference);
     }
   }
 </script>
