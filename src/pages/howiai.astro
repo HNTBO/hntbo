@@ -38,7 +38,7 @@ const workflows = [
 <BaseLayout title="HowIAI" description="How I use AI in practical, repeatable creative workflows.">
   <section class="pt-32 pb-16 md:pt-40 md:pb-24">
     <div class="container">
-      <div class="max-w-3xl">
+      <div class="max-w-5xl">
         <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
           HowIAI
         </h1>
@@ -59,7 +59,7 @@ const workflows = [
 
   <section class="pb-16 md:pb-24">
     <div class="container">
-      <div class="max-w-3xl space-y-6">
+      <div class="max-w-5xl space-y-6">
         {workflows.map(({ number, title, body }) => (
           <article class="bg-surface rounded-lg border border-border p-6 md:p-8">
             <p class="text-sm font-mono text-accent mb-3">{number}</p>
@@ -67,20 +67,6 @@ const workflows = [
             <p class="text-text-secondary leading-relaxed">{body}</p>
           </article>
         ))}
-      </div>
-    </div>
-  </section>
-
-  <section class="pb-16 md:pb-24">
-    <div class="container">
-      <div class="max-w-3xl bg-surface/50 rounded-lg border border-border p-6 md:p-8">
-        <h2 class="text-2xl font-semibold text-text-primary mb-4">Why This Matters</h2>
-        <p class="text-text-secondary leading-relaxed">
-          For me, the value of AI is not abstraction. It is concrete leverage. It is the
-          ability to build useful things faster, automate the parts of computer work that
-          should not require so much human patience, and spend more time on judgment,
-          direction, and making.
-        </p>
       </div>
     </div>
   </section>
