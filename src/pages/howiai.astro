@@ -1,24 +1,85 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const workflows = [
+  {
+    number: '01',
+    title: 'Coding Assistance',
+    body:
+      'AI-assisted coding is what made a lot of this site possible. It lets me build websites, make small digital products, and create custom tools that fit my exact needs instead of waiting for the perfect software to exist.',
+  },
+  {
+    number: '02',
+    title: 'Agentic Computer Work',
+    body:
+      'One of the most useful shifts is when AI stops just answering questions and starts acting on files, folders, and documents. That means sorting material, generating documents, running scripts on selected files, grading student work, or reorganizing a messy structure without turning every step into manual labor.',
+  },
+  {
+    number: '03',
+    title: 'Skills And Workflows',
+    body:
+      'Skills are where AI becomes repeatable. They turn annoying semi-technical routines like clicking through interfaces, copying, pasting, formatting, renaming, and filling templates into workflows I can trigger conversationally. Less friction, fewer errors, and much less time wasted on operations that should never have been manual in the first place.',
+  },
+  {
+    number: '04',
+    title: 'Grounded Documentation Q&A',
+    body:
+      'Sometimes the best use of AI is not knowing more, but being pointed at the right source material. Instead of only browsing documentation page by page, I can give the agent the relevant docs directly and ask questions against them. It becomes a fast way to troubleshoot, compare approaches, and get unstuck without guessing.',
+  },
+  {
+    number: '05',
+    title: 'Image And Video Generation',
+    body:
+      'Image and video generation can be useful either as production assets or as the final output. Sometimes that means concept frames, visual references, textures, or supporting media. Sometimes the generated piece is the project itself.',
+  },
+];
 ---
 
-<BaseLayout title="HowIAI" description="How I use AI in my creative workflows.">
+<BaseLayout title="HowIAI" description="How I use AI in practical, repeatable creative workflows.">
   <section class="pt-32 pb-16 md:pt-40 md:pb-24">
     <div class="container">
-      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
-        HowIAI
-      </h1>
-      <p class="text-text-secondary text-lg max-w-2xl mb-12">
-        How I integrate AI into my creative workflows - from image generation to coding assistance.
-      </p>
+      <div class="max-w-3xl">
+        <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
+          HowIAI
+        </h1>
+        <p class="text-text-secondary text-lg md:text-xl leading-relaxed mb-6">
+          AI is useful to me when it stops being impressive and starts being practical.
+          I use it to write code, automate tedious computer work, turn repeated procedures
+          into reusable skills, query documentation more effectively, and generate visual
+          assets when the project calls for it.
+        </p>
+        <p class="text-text-secondary leading-relaxed">
+          I am less interested in vague promises of productivity and more interested in
+          workflows that remove friction, reduce repetition, and let me make tools that
+          fit the way I actually work.
+        </p>
+      </div>
+    </div>
+  </section>
 
-      <div class="text-center py-16 bg-surface rounded-lg border border-border">
-        <svg class="w-16 h-16 mx-auto text-text-secondary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-        <h3 class="text-xl font-semibold text-text-primary mb-2">Coming Soon</h3>
-        <p class="text-text-secondary max-w-md mx-auto">
-          This section will feature articles and resources about integrating AI into creative workflows. Stay tuned!
+  <section class="pb-16 md:pb-24">
+    <div class="container">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {workflows.map(({ number, title, body }) => (
+          <article class="bg-surface rounded-lg border border-border p-6 md:p-8">
+            <p class="text-sm font-mono text-accent mb-3">{number}</p>
+            <h2 class="text-2xl font-semibold text-text-primary mb-4">{title}</h2>
+            <p class="text-text-secondary leading-relaxed">{body}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="pb-16 md:pb-24">
+    <div class="container">
+      <div class="max-w-3xl bg-surface/50 rounded-lg border border-border p-6 md:p-8">
+        <h2 class="text-2xl font-semibold text-text-primary mb-4">Why This Matters</h2>
+        <p class="text-text-secondary leading-relaxed">
+          For me, the value of AI is not abstraction. It is concrete leverage. It is the
+          ability to build useful things faster, automate the parts of computer work that
+          should not require so much human patience, and spend more time on judgment,
+          direction, and making.
         </p>
       </div>
     </div>
