@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+const formattedDate = post.data.publishDate.toLocaleDateString('fr-FR', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+  <article class="pt-32 pb-16 md:pt-40 md:pb-24">
+    <div class="container max-w-4xl">
+      <a href="/posts" class="inline-flex items-center text-text-secondary hover:text-accent transition-colors mb-8">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Posts
+      </a>
+
+      <p class="text-sm text-text-secondary mb-4">{formattedDate}</p>
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
+        {post.data.title}
+      </h1>
+      <p class="text-xl text-text-secondary leading-relaxed mb-8">
+        {post.data.description}
+      </p>
+
+      {post.data.tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 mb-10">
+          {post.data.tags.map((tag: string) => <span class="tag">{tag}</span>)}
+        </div>
+      )}
+
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+  </article>
+</BaseLayout>

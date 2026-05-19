@@ -35,7 +35,30 @@ const tools = defineCollection({
   }),
 });
 
+const posts = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()).default([]),
+    featured: z.boolean().optional().default(false),
+    publishDate: z.coerce.date(),
+  }),
+});
+
+const resources = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()).default([]),
+    publishDate: z.coerce.date().optional(),
+  }),
+});
+
 export const collections = {
   tutorials,
   tools,
+  posts,
+  resources,
 };
