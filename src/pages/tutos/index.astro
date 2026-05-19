@@ -61,7 +61,7 @@ const allTags = [...new Set(sortedTutorials.flatMap((item) => item.data.tags || 
             <div class="tutorial-item" data-tags={JSON.stringify(tutorial.data.tags || [])}>
               <Card
                 title={tutorial.data.title}
-                href={`/tutos/${tutorial.slug}`}
+                href={`/tutos/${tutorial.id.replace(/\.(md|mdx)$/, '')}`}
                 image={tutorial.data.thumbnail || `https://img.youtube.com/vi/${tutorial.data.youtubeId}/maxresdefault.jpg`}
                 tags={tutorial.data.tags}
               />

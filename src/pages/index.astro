@@ -75,7 +75,7 @@ const featuredTools = allTools
         {featuredTutorials.map((tutorial) => (
           <Card
             title={tutorial.data.title}
-            href={`/tutos/${tutorial.slug}`}
+            href={`/tutos/${tutorial.id.replace(/\.(md|mdx)$/, '')}`}
             image={tutorial.data.thumbnail || `https://img.youtube.com/vi/${tutorial.data.youtubeId}/maxresdefault.jpg`}
             tags={tutorial.data.tags}
           />
@@ -97,7 +97,7 @@ const featuredTools = allTools
         {featuredTools.map((tool) => (
           <Card
             title={tool.data.title}
-            href={toolsUrl(`/tools/${tool.slug}`)}
+            href={toolsUrl(`/tools/${tool.id.replace(/\.(md|mdx)$/, '')}`)}
             image={tool.data.image}
             tags={tool.data.tags}
           />

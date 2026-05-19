@@ -63,7 +63,7 @@ const allTags = [...new Set(sortedTools.flatMap((item) => item.data.tags || []))
             <div class="tool-item" data-tags={JSON.stringify(tool.data.tags || [])}>
               <Card
                 title={tool.data.title}
-                href={toolsUrl(`/tools/${tool.slug}`)}
+                href={toolsUrl(`/tools/${tool.id.replace(/\.(md|mdx)$/, '')}`)}
                 image={tool.data.image}
                 tags={tool.data.tags}
               />

@@ -1,18 +1,18 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import { toolsUrl } from '../../utils/toolsUrl';
 
 export async function getStaticPaths() {
   const tools = await getCollection('tools');
   return tools.map((tool) => ({
-    params: { slug: tool.slug },
+    params: { slug: tool.id.replace(/\.(md|mdx)$/, '') },
     props: { tool },
   }));
 }
 
 const { tool } = Astro.props;
-const { Content } = await tool.render();
+const { Content } = await render(tool);
 ---
 
 <BaseLayout
