@@ -47,7 +47,6 @@ const ogImage = image ? (image.startsWith('http') ? image : new URL(image, Astro
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
     <link rel="icon" type="image/svg+xml" href="/floppy-disk-favicon.svg" />
-    <slot name="head" />
     <title>{fullTitle}</title>
   </head>
   <body class="flex flex-col min-h-screen">
