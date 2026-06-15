@@ -8,7 +8,7 @@ const ALLOWED_IP_HASHES = new Set([
 const LOCAL_IPS = new Set(['127.0.0.1', '::1']);
 
 export const config = {
-  matcher: ['/private/:path*', PRIVATE_ACCESS_SCRIPT],
+  matcher: ['/private/:path*', '/private-access.js'],
 };
 
 async function sha256(value: string) {
