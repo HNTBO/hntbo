@@ -1,0 +1,50 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  frontmatter: {
+    title: string;
+    description?: string;
+    kicker?: string;
+    updated?: string;
+  };
+}
+
+const { frontmatter } = Astro.props;
+---
+
+<BaseLayout
+  title={frontmatter.title}
+  description={frontmatter.description || 'Private HNTBO document'}
+>
+  <Fragment slot="head">
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+  </Fragment>
+
+  <section class="pt-28 pb-16 md:pt-36">
+    <div class="container">
+      <div class="max-w-4xl">
+        <p class="font-mono text-sm text-accent mb-4">{frontmatter.kicker || 'Private note'}</p>
+        <h1 class="text-4xl md:text-6xl font-semibold tracking-tight text-text-primary mb-5">
+          {frontmatter.title}
+        </h1>
+        {frontmatter.description && (
+          <p class="text-xl text-text-secondary leading-relaxed max-w-3xl">
+            {frontmatter.description}
+          </p>
+        )}
+        {frontmatter.updated && (
+          <p class="mt-6 text-sm text-text-secondary">
+            Updated {frontmatter.updated}
+          </p>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <article class="container pb-24">
+    <div class="prose max-w-4xl">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>
